@@ -2,6 +2,9 @@
 -- Somente leitura: não altera objetos ou dados.
 SELECT
   COUNT(*) AS cursos,
+    COUNT(DISTINCT co_curso) AS cursos_distintos,
+    ROUND(100.0 * COUNT(*) FILTER (WHERE possui_enade_2023)
+          / NULLIF(COUNT(*), 0), 1) AS cobertura_enade,
   COUNT(*) FILTER (WHERE possui_enade_2023) AS com_enade,
   COUNT(*) FILTER (WHERE NOT possui_enade_2023) AS sem_enade,
   SUM(qt_mat) AS matriculas,

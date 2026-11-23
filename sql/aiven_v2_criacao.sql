@@ -46,6 +46,13 @@ WITH censo_curso AS (
     WHERE f.nu_ano_censo = 2024
       AND f.tp_dimensao IN (1, 2)
     GROUP BY f.co_curso
+), enade_normalizado AS MATERIALIZED (
+    SELECT e.*,
+           CASE WHEN BTRIM(e.co_curso::text) ~ '^[0-9]+$'
+                THEN COALESCE(NULLIF(LTRIM(BTRIM(e.co_curso::text), '0'), ''), '0')
+           END AS co_curso_normalizado
+    FROM public.fato_enade_curso AS e
+    WHERE e.nu_ano = 2023
 )
 SELECT
     c.nu_ano_censo,
@@ -148,20 +155,8 @@ SELECT
     c.qt_conc_indigena AS qt_conc_indigena_censo,
     c.qt_conc_cornd AS qt_conc_cornd_censo
 FROM censo_curso AS c
-LEFT JOIN public.fato_enade_curso AS e
-       ON CASE WHEN BTRIM(e.co_curso::text) ~ '^[0-9]+
-      AND e.nu_ano = 2023
-LEFT JOIN public.dim_curso AS dc
-       ON dc.co_curso = c.co_curso
-LEFT JOIN public.dim_ies AS dies
-       ON dies.co_ies = c.co_ies
-LEFT JOIN public.dim_cine AS cine
-       ON cine.co_cine_rotulo = c.co_cine_rotulo
-LEFT JOIN public.dim_localizacao AS loc
-       ON loc.id_localizacao = c.id_localizacao;
-               THEN COALESCE(NULLIF(LTRIM(BTRIM(e.co_curso::text), '0'), ''), '0')
-               ELSE NULL END = c.co_curso::text
-      AND e.nu_ano = 2023
+LEFT JOIN enade_normalizado AS e
+       ON e.co_curso_normalizado = c.co_curso::text
 LEFT JOIN public.dim_curso AS dc
        ON dc.co_curso = c.co_curso
 LEFT JOIN public.dim_ies AS dies
