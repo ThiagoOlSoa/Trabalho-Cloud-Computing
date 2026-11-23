@@ -28,6 +28,10 @@ O aplicativo também lê os dois arquivos `.csv.gz` diretamente, sem extraí-los
 
 Veja o [guia de implantação CSV](docs/publicacao_csv.md) e a [pasta de dados compactados](data/processed/README.md) para os nomes exatos, instruções de upload e testes. O modo `auto` e o modo `postgres` continuam disponíveis para o desenvolvimento local e para a integração Aiven futura.
 
+## Próxima etapa: PostgreSQL Aiven
+
+O roteiro [Etapa 6C — Aiven](docs/etapa_6c_aiven.md) prepara a inspeção somente leitura do serviço existente e a validação de dados pela Console/PG Studio, sem provisionar recursos, executar cargas remotas ou depender do Streamlit Cloud. Os scripts de auditoria SQL estão em `sql/aiven_preflight.sql` e `sql/aiven_validacao_dados.sql`.
+
 ## Execução local
 
 Use Python 3.12 e execute na raiz do projeto.
