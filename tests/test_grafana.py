@@ -9,7 +9,12 @@ from grafana import gerar_dashboard as grafana
 
 VARIABLE = re.compile(r"\$\{([a-z]+):sqlstring\}")
 SOCKET = os.getenv("ETL_TEST_PG_SOCKET")
-DATABASE = os.getenv("ETL_TEST_DB_NAME")
+DATABASE = os.getenv("GRAFANA_TEST_LEGACY_DB_NAME")
+BASELINE_DB = os.getenv("ETL_TEST_DB_NAME")
+LEGACY_USER = os.getenv("GRAFANA_TEST_LEGACY_USER")
+BASELINE_SQL = Path(__file__).with_name("fixtures") / "grafana_referencia_7a.sql"
+TABLES = {"fato_censo_curso", "fato_enade_curso", "dim_curso", "dim_ies",
+          "dim_cine", "dim_localizacao"}
 REFERENCE = (7078, 1269093, 673375, 153760, 1665, 23.5, 20.2, 41.2, 21.7, 41.8)
 FILTERS = {name for name, _, _ in grafana.VARIABLES} | {"enade"}
 
@@ -23,6 +28,16 @@ class GrafanaJsonTest(unittest.TestCase):
         self.assertEqual(len({panel["id"] for panel in dashboard["panels"]}), len(dashboard["panels"]))
         self.assertEqual(dashboard["refresh"], "")
 
+    def test_all_panels_and_query_variables_use_only_tables(self):
+        dashboard = grafana.dashboard()
+        sources = [target["rawSql"] for panel in dashboard["panels"]
+                   for target in panel.get("targets", [])]
+        sources.extend(variable["query"] for variable in dashboard["templating"]["list"]
+                       if variable["type"] == "query")
+        for query in sources:
+            self.assertEqual(set(re.findall(r"\bpublic\.(\w+)", query)), TABLES)
+            self.assertNotIn("vw_observatorio_censo_enade", query)
+
     def test_read_only_queries_and_fixed_interpolation_format(self):
         for panel in grafana.dashboard()["panels"]:
             for target in panel.get("targets", []):
@@ -31,18 +46,18 @@ class GrafanaJsonTest(unittest.TestCase):
                     self.assertEqual(set(VARIABLE.findall(sql)), FILTERS)
                     self.assertNotIn('${', VARIABLE.sub("", sql))
                     self.assertNotRegex(sql, r";|(?i:\b(?:insert|update|delete|truncate|drop|alter|grant)\b)")
-                    self.assertTrue(sql.startswith("WITH cursos AS ("))
+                    self.assertTrue(sql.startswith("WITH censo_curso AS ("))
                     self.assertEqual(target["datasource"], grafana.DATASOURCE)
 
 
 @unittest.skipUnless(SOCKET and Path(SOCKET).is_dir() and DATABASE,
-                     "Requer socket Unix e banco PostgreSQL descartável com os CSVs completos")
+                     "Requer socket Unix e banco legado local e descartável com os CSVs completos")
 class GrafanaPostgresTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         import psycopg2
         cls.db = psycopg2.connect(host=SOCKET, dbname=DATABASE,
-                                  user=os.getenv("ETL_TEST_PG_USER", "agent"), sslmode="disable")
+                                  user=LEGACY_USER or os.getenv("ETL_TEST_PG_USER", "agent"), sslmode="disable")
         cls.db.set_session(readonly=True)
         with cls.db.cursor() as cur:
             cur.execute("SHOW standard_conforming_strings")
@@ -57,7 +72,7 @@ class GrafanaPostgresTest(unittest.TestCase):
     def tearDownClass(cls):
         cls.db.close()
 
-    def query(self, sql, **selections):
+    def query(self, sql, connection=None, **selections):
         # Espelha :sqlstring do Grafana. O servidor usa standard_conforming_strings=on.
         values = self.options | selections
         rendered = VARIABLE.sub(
@@ -65,9 +80,70 @@ class GrafanaPostgresTest(unittest.TestCase):
                                     for value in values[match[1]]),
             sql,
         )
-        with self.db.cursor() as cur:
+        with (connection or self.db).cursor() as cur:
             cur.execute(rendered)
             return cur.fetchall()
+
+    def test_contrato_do_legado_e_granularidade_direta(self):
+        with self.db.cursor() as cur:
+            cur.execute("""
+                SELECT table_name, data_type FROM information_schema.columns
+                WHERE table_schema = 'public' AND column_name = 'co_curso'
+                  AND table_name IN ('fato_censo_curso', 'fato_enade_curso')
+            """)
+            self.assertEqual(dict(cur.fetchall()), {
+                "fato_censo_curso": "integer", "fato_enade_curso": "character varying",
+            })
+            cur.execute(grafana.scope(False) + """
+                SELECT count(*), count(DISTINCT co_curso),
+                       count(*) FILTER (WHERE possui_enade_2023),
+                       count(*) FILTER (WHERE possui_enade_2023 IS FALSE)
+                FROM cursos
+            """)
+            self.assertEqual(cur.fetchone(), (7078, 7078, 1665, 5413))
+            cur.execute(grafana.scope(False) + """
+                SELECT pg_typeof(grau_academico)::text, pg_typeof(modalidade_ensino)::text,
+                       pg_typeof(rede_ensino)::text, pg_typeof(uf_oferta::text)::text,
+                       pg_typeof(area_cine::text)::text, pg_typeof(possui_enade_2023)::text,
+                       pg_typeof(media_nt_ger)::text
+                FROM cursos LIMIT 1
+            """)
+            self.assertEqual(cur.fetchone(), ("text",) * 5 + ("boolean", "numeric"))
+
+    @unittest.skipUnless(LEGACY_USER, "Requer usuário de leitura da fixture local")
+    def test_permissoes_minimas(self):
+        with self.db.cursor() as cur:
+            cur.execute("""
+                SELECT has_table_privilege('public.vw_observatorio_censo_enade', 'SELECT'),
+                       has_table_privilege('public.fato_censo_curso', 'INSERT'),
+                       has_column_privilege('public.fato_censo_curso', 'qt_mat', 'SELECT'),
+                       has_column_privilege('public.fato_censo_curso', 'qt_mat_masc', 'SELECT')
+            """)
+            self.assertEqual(cur.fetchone(), (False, False, True, False))
+        self.assertEqual(self.query(grafana.query("indicadores"))[0][0], 7078)
+
+    @unittest.skipUnless(BASELINE_DB, "Requer banco local de referência da Etapa 7A")
+    def test_paridade_com_7a_em_paineis_e_listas(self):
+        import psycopg2
+        db = psycopg2.connect(host=SOCKET, dbname=BASELINE_DB,
+                              user=os.getenv("ETL_TEST_PG_USER", "agent"), sslmode="disable")
+        try:
+            db.set_session(readonly=True)
+            old_sql = BASELINE_SQL.read_text(encoding="utf-8").strip()
+            for panel in grafana.dashboard()["panels"]:
+                for target in panel.get("targets", []):
+                    sql = target["rawSql"]
+                    with self.subTest(panel=panel["title"]):
+                        for filters in ({}, {"modalidade": ["EaD"], "enade": ["Com registro"]}):
+                            self.assertEqual(
+                                self.query(sql, **filters),
+                                self.query(sql.replace(grafana.scope(False), old_sql, 1), connection=db, **filters),
+                            )
+            for name, _, column in grafana.VARIABLES:
+                sql = grafana.options_query(column).replace(grafana.scope(False), old_sql, 1)
+                self.assertEqual([row[0] for row in self.query(sql, connection=db)], self.options[name])
+        finally:
+            db.close()
 
     def test_referencia_integral(self):
         row, = self.query(grafana.query("indicadores"))
@@ -114,19 +190,20 @@ class GrafanaPostgresTest(unittest.TestCase):
         # Sem escrita: substitui a view por dois cursos sintéticos em uma subconsulta.
         fields = {
             "grau_academico": "'Tecnológico'", "modalidade_ensino": "'EaD'", "rede_ensino": "'Privada'",
-            "no_cine_rotulo": "'Fixture'", "tp_modalidade_ensino": "2",
-            "co_modalidade": "0", "sg_uf": "'SP'", "possui_enade_2023": "true",
+            "area_cine": "'Fixture'", "uf_oferta": "'EaD · UF não atribuída'", "possui_enade_2023": "true",
             "qt_mat": "10 * n", "qt_ing": "0", "qt_conc": "0",
             "qt_mat_fem_censo": "CASE WHEN n = 1 THEN 10 ELSE 0 END",
             "qt_mat_preta_censo": "0", "qt_mat_parda_censo": "0", "qt_mat_cornd_censo": "10 * n",
-            "qt_sit_trancada": "0", "qt_sit_desvinculado": "0", "qt_sit_transferido": "0",
-            "qt_sit_falecido": "0", "media_nt_ger": "(CASE WHEN n = 1 THEN 0 ELSE 100 END)::numeric",
-            "qt_notas_validas": "n",
+            "total_situacoes": "10 * n", "qt_sit_desvinculado": "0",
+            "media_nt_ger": "(CASE WHEN n = 1 THEN 0 ELSE 100 END)::numeric",
+            "peso_nota": "n",
         }
+
         def fixture(**changes):
             columns = ", ".join(f"{expr} AS {name}" for name, expr in (fields | changes).items())
             sql = grafana.query("indicadores").replace(
-                "public.vw_observatorio_censo_enade", f"(SELECT {columns} FROM (VALUES (1), (2)) t(n))",
+                grafana.scope(False), f"WITH cursos AS (SELECT {columns} FROM (VALUES (1), (2)) t(n))",
+                1,
             )
             return self.query(sql, cine=["Fixture"])[0]
 
@@ -136,6 +213,6 @@ class GrafanaPostgresTest(unittest.TestCase):
         self.assertIsNone(row[7])
         self.assertEqual(row[8], 0)
         self.assertEqual(float(row[9]), 66.7)
-        self.assertEqual(fixture(qt_notas_validas="0")[4], 2)
-        self.assertIsNone(fixture(qt_notas_validas="0")[9])
+        self.assertEqual(fixture(peso_nota="0")[4], 2)
+        self.assertIsNone(fixture(peso_nota="0")[9])
         self.assertIsNone(fixture(qt_mat_fem_censo="CASE WHEN n = 1 THEN NULL ELSE 0 END")[6])

@@ -2,19 +2,19 @@
 
 ## Fonte PostgreSQL
 
-Depois de o responsável validar a view e autorizar a conexão, em **Connections → Data sources → Add data source**, selecione **PostgreSQL**. Preencha no editor da fonte:
+Depois de o responsável confirmar o esquema e autorizar a conexão, em **Connections → Data sources → Add data source**, selecione **PostgreSQL**. Preencha no editor da fonte:
 
 | Campo | Configuração |
 |---|---|
 | Host URL | Hostname e porta do serviço, sem esquema, usuário ou senha na URL |
-| Database | Banco que contém `public.vw_observatorio_censo_enade` |
-| Username | Usuário dedicado, sem privilégios administrativos, com acesso de leitura apenas à view do Observatório |
+| Database | `defaultdb` do serviço Aiven confirmado pela equipe |
+| Username | Usuário dedicado, sem privilégios administrativos, com leitura limitada às colunas usadas nas seis tabelas do Observatório |
 | Password | Apenas no campo protegido da fonte Grafana |
 | TLS/SSL Mode | `verify-full` com a CA do serviço. No Cloud, carregue a CA pelo método de conteúdo do certificado |
 | PostgreSQL version | Versão real do servidor |
 | Connection limits | Comece com 3 conexões abertas, 1 ociosa e desative o ajuste automático de ociosas |
 
-Peça ao administrador que confirme os privilégios efetivos, inclusive os herdados de `PUBLIC`. O papel precisa de `CONNECT` no banco, `USAGE` no esquema e `SELECT` na view. Mantenha `standard_conforming_strings=on` e defina um `statement_timeout` adequado. O role deve carecer de permissões de escrita mesmo se alguém usar a API da fonte fora dos painéis. A função Viewer no Grafana limita a edição do dashboard e ainda permite emitir consultas à fonte acessível. Se preciso, use uma instância dedicada ao projeto, com essa fonte como único acesso ao banco. Selecione **Save & test** e verifique a fonte com os próprios privilégios de leitura. [Configuração do PostgreSQL no Grafana](https://grafana.com/docs/grafana/latest/datasources/postgres/configure/) · [Segurança das fontes no Grafana](https://grafana.com/docs/grafana/latest/administration/data-source-management/#data-source-permissions) · [Usuário PostgreSQL Aiven de leitura](https://aiven.io/docs/products/postgresql/howto/readonly-user)
+Peça ao administrador que confirme os privilégios efetivos, inclusive os herdados de `PUBLIC`. O papel precisa de `CONNECT` no banco, `USAGE` no esquema `public` e `SELECT` nas colunas listadas no [preflight](preflight_aiven.sql). O [exemplo de permissões testadas](../tests/fixtures/grafana_permissoes.sql) usa concessões por coluna. Mantenha `standard_conforming_strings=on` e defina um `statement_timeout` adequado. O role deve carecer de permissões de escrita mesmo se alguém usar a API da fonte fora dos painéis. A função Viewer no Grafana limita a edição do dashboard e ainda permite emitir consultas à fonte acessível. Se preciso, use uma instância dedicada ao projeto, com essa fonte como único acesso ao banco. Após aprovação, valide o preflight como o papel de leitura. Em seguida, selecione **Save & test** e confira as consultas fazendo login no Grafana com o perfil Viewer. [Configuração do PostgreSQL no Grafana](https://grafana.com/docs/grafana/latest/datasources/postgres/configure/) · [Segurança das fontes no Grafana](https://grafana.com/docs/grafana/latest/administration/data-source-management/#data-source-permissions) · [Usuário PostgreSQL Aiven de leitura](https://aiven.io/docs/products/postgresql/howto/readonly-user)
 
 ## Importação e uso
 
@@ -30,7 +30,7 @@ python grafana/gerar_dashboard.py --check
 python -m unittest discover -s tests -p 'test_grafana.py' -v
 ```
 
-Os testes de consultas usam o socket Unix de um PostgreSQL descartável com o esquema, os dois CSVs completos e a view instalados. Configure `ETL_TEST_PG_SOCKET`, `ETL_TEST_DB_NAME` e, se necessário, `ETL_TEST_PG_USER`. Consulte o [roteiro de carga local](../docs/etapa_6c_aiven.md). Se o loader da branch exigir CSV simples, descompacte os gzip em uma pasta temporária e informe os caminhos via `--csv`.
+Para os testes SQL em PostgreSQL descartável, siga a [reprodução do legado](../docs/dashboard_grafana.md#como-reproduzir-os-testes-locais).
 
 ## Acesso do professor
 

@@ -146,7 +146,7 @@ def dashboard():
                       "type": "datasource", "pluginId": DATASOURCE["type"], "pluginName": "PostgreSQL"}],
         "id": None, "uid": "observatorio-area1", "title": "Observatório de Evasão e Retenção | Área 1",
         "description": "Censo da Educação Superior 2024 e ENADE 2023 · INEP · ODS 5 e 18",
-        "tags": ["INEP", "ODS 5", "ODS 18"], "editable": True, "schemaVersion": 41, "version": 1,
+        "tags": ["INEP", "ODS 5", "ODS 18"], "editable": True, "schemaVersion": 41, "version": 2,
         "timezone": "browser", "timepicker": {"hidden": True}, "refresh": "",
         "templating": {"list": variables()},
         "panels": [
