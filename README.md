@@ -2,6 +2,26 @@
 
 Projeto acadêmico de análise de cursos da Área 1, com foco em Exatas, Engenharia, Tecnologia e Matemática. Usa os microdados oficiais do Censo da Educação Superior 2024 e o agregado do ENADE 2023 pelo código do curso, no contexto dos ODS 5 e 18.
 
+## Indicadores conferidos nos CSVs de referência
+
+Reprocessamos os arquivos completos do **Censo da Educação Superior 2024** (110.022 registros, 7.085 cursos em todas as dimensões geográficas) e do **ENADE 2023 agregado** (1.665 cursos). A visão do dashboard utiliza as dimensões 1 e 2 do Censo, abrangendo **7.078 cursos**; sete cursos presentes apenas na dimensão 3 ficam fora da visão, mas permanecem na base original.
+
+| Indicador (recorte do dashboard) | Valor |
+| --- | ---: |
+| Cursos | 7.078 |
+| Matrículas (Censo 2024) | 1.269.093 |
+| Ingressantes (Censo 2024) | 673.375 |
+| Concluintes (Censo 2024) | 153.760 |
+| Participação feminina nas matrículas | 20,2% |
+| Participação preta/parda entre matrículas com raça/cor declarada | 41,2% |
+| Composição anual de desvinculação | 21,7% |
+| Cursos com ENADE 2023 | 1.665 (23,5%) |
+| Média ENADE ponderada pelo número de notas válidas | 41,8 |
+
+A tabela [`data/indicadores_referencia.csv`](data/indicadores_referencia.csv) contém totais verificáveis por modalidade, rede e grau, além do total geral. Esses recortes são alternativas de agrupamento do mesmo universo e não devem ser somados entre si. O ENADE 2023 e o Censo 2024 representam anos/populações distintos; os totais marginais de gênero e raça/cor **não permitem calcular evasão individual de mulheres negras**. A desvinculação mostrada é uma composição anual de vínculos, não uma taxa longitudinal de evasão.
+
+**Dados não versionados:** o repositório publica amostras de 120 linhas e um CSV-resumo, mas **não** contém os dois CSVs processados completos: `data/processed/censo_2024_area1.csv` (~41,8 MB) e `data/processed/enade_2023_area1.csv` (~151 KB). Para executar o fallback CSV, os dois arquivos precisam existir localmente nessa pasta, conforme [guia](data/README.md). Para publicar sem esses arquivos, configurar a Aiven e os Secrets do Streamlit com `APP_DATA_MODE=postgres`. A publicação no GitHub não comprova a conexão ao banco remoto.
+
 ## Execução local
 
 Use Python 3.12 e execute na raiz do projeto.
