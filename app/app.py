@@ -149,10 +149,19 @@ carregar_postgres_cache = st.cache_data(ttl=120, max_entries=2, show_spinner=Fal
 @st.cache_data(ttl=120, max_entries=2, show_spinner="Carregando arquivos locais...")
 def carregar_via_csv_local(raiz: Path | None = None) -> pd.DataFrame | None:
     raiz = raiz or Path(__file__).resolve().parents[1]
-    censo_path = raiz / "data" / "processed" / "censo_2024_area1.csv"
-    enade_path = raiz / "data" / "processed" / "enade_2023_area1.csv"
+    pasta = raiz / "data" / "processed"
 
-    if not censo_path.exists() or not enade_path.exists():
+    def localizar_csv(nome):
+        # Prefere CSV convencional em ambiente local e aceita gzip no deploy.
+        caminho = pasta / f"{nome}.csv"
+        if caminho.is_file():
+            return caminho
+        comprimido = pasta / f"{nome}.csv.gz"
+        return comprimido if comprimido.is_file() else None
+
+    censo_path = localizar_csv("censo_2024_area1")
+    enade_path = localizar_csv("enade_2023_area1")
+    if censo_path is None or enade_path is None:
         return None
 
     censo = pd.read_csv(censo_path, sep=";", encoding="cp1252", low_memory=False)
@@ -384,7 +393,7 @@ st.sidebar.header("Filtros e fonte")
 try:
     config = ler_configuracao()
     modo = (config["APP_DATA_MODE"] or "auto").strip().lower()
-    if modo not in ("auto", "postgres"):
+    if modo not in ("auto", "postgres", "csv"):
         raise ValueError("Modo de dados inválido")
 except Exception as exc:
     logger.warning("Configuração do dashboard indisponível (tipo=%s)", type(exc).__name__)
@@ -392,8 +401,13 @@ except Exception as exc:
     st.stop()
 
 exige_postgres = modo == "postgres"
-preferir_local = False if exige_postgres else st.sidebar.checkbox("Forçar leitura dos CSVs locais", value=False)
-df, fonte = obter_dados(preferir_local, config, exige_postgres)
+preferir_local = st.sidebar.checkbox("Forçar leitura dos CSVs locais", value=False) if modo == "auto" else False
+if modo == "csv":
+    # Modo de avaliação: nunca abre conexão remota nem usa fallback PostgreSQL.
+    df = carregar_via_csv_local(Path(__file__).resolve().parents[1])
+    fonte = "CSVs Locais (data/processed/)" if df is not None else None
+else:
+    df, fonte = obter_dados(preferir_local, config, exige_postgres)
 
 if df is None and exige_postgres:
     st.error("PostgreSQL indisponível no modo de publicação. Informe a equipe responsável.")
@@ -401,7 +415,7 @@ if df is None and exige_postgres:
 if df is None:
     st.error(
         "Nenhuma fonte de dados encontrada! Para rodar localmente:\n"
-        "1. Coloque `censo_2024_area1.csv` e `enade_2023_area1.csv` dentro de `data/processed/`, OU\n"
+        "1. Coloque os dois arquivos `.csv` ou `.csv.gz` (Censo e ENADE) em `data/processed/`, OU\n"
         "2. Configure suas credenciais do PostgreSQL Aiven no arquivo `.env`."
     )
     st.stop()

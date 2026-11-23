@@ -39,3 +39,7 @@ O PostgreSQL entregou somente o agregado necessário ao painel. A leitura CSV pr
 ## Pendências Aiven e publicação
 
 Confirmar serviço ativo e plano, hostname e porta, banco, view publicada, permissões do usuário de leitura, CA e conectividade a partir do Community Cloud. O repositório consolidado já está no GitHub, em `ThiagoOlSoa/Trabalho-Cloud-Computing`, branch `main`. A equipe ainda precisa configurar os segredos no Streamlit Community Cloud, validar a conexão real com a Aiven e conferir a fonte ativa após a publicação. Os CSVs processados completos não estão versionados. Nenhuma conta real, credencial real, operação Terraform remota, publicação ou alteração em banco compartilhado foi usada para produzir esta versão. [Manual de publicação](publicacao.md)
+
+## Piloto de publicação CSV (Etapa 6B)
+
+Foi preparado um modo de teste `APP_DATA_MODE=csv` que aceita `.csv.gz` em `data/processed/` e nunca tenta consultar o PostgreSQL. O modo exige a publicação dos dois arquivos compactados no repositório e a criação do aplicativo no Streamlit Community Cloud. **A publicação e o teste no servidor externo ainda não foram realizados.** Veja [publicacao_csv.md](publicacao_csv.md).

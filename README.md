@@ -22,6 +22,12 @@ A tabela [`data/indicadores_referencia.csv`](data/indicadores_referencia.csv) co
 
 **Dados não versionados:** o repositório publica amostras de 120 linhas e um CSV-resumo, mas **não** contém os dois CSVs processados completos: `data/processed/censo_2024_area1.csv` (~41,8 MB) e `data/processed/enade_2023_area1.csv` (~151 KB). Para executar o fallback CSV, os dois arquivos precisam existir localmente nessa pasta, conforme [guia](data/README.md). Para publicar sem esses arquivos, configurar a Aiven e os Secrets do Streamlit com `APP_DATA_MODE=postgres`. A publicação no GitHub não comprova a conexão ao banco remoto.
 
+## Teste online com CSVs compactados — antes da Aiven
+
+O aplicativo também lê os dois arquivos `.csv.gz` diretamente, sem extraí-los no repositório. Os dados públicos processados não estão todos no GitHub automaticamente: após adicionar os dois arquivos compactados em `data/processed/`, você pode testar a mesma aplicação no Streamlit Community Cloud com `APP_DATA_MODE=csv`, sem credenciais de banco. Esse modo **não consulta a Aiven**, mesmo que existam configurações PostgreSQL.
+
+Veja o [guia de implantação CSV](docs/publicacao_csv.md) e a [pasta de dados compactados](data/processed/README.md) para os nomes exatos, instruções de upload e testes. O modo `auto` e o modo `postgres` continuam disponíveis para o desenvolvimento local e para a integração Aiven futura.
+
 ## Execução local
 
 Use Python 3.12 e execute na raiz do projeto.

@@ -1,5 +1,6 @@
 """Configuração de publicação testada com valores fictícios e callbacks locais."""
 
+import gzip
 import logging
 import os
 import tempfile
@@ -63,6 +64,41 @@ class TestPublicacao(unittest.TestCase):
         self.assertIn("CSVs Locais", app.sidebar.caption[0].value)
         self.assertEqual(len(app.metric), 6)
         self.assertEqual(app.metric[5].value, "0,0")
+
+    def test_csv_gzip_explicitamente_sem_acesso_postgres(self):
+        self.dados_locais()
+        pasta = self.root / "data/processed"
+        for nome in ("censo_2024_area1", "enade_2023_area1"):
+            original = pasta / f"{nome}.csv"
+            comprimido = pasta / f"{nome}.csv.gz"
+            with gzip.open(comprimido, "wb") as destino:
+                destino.write(original.read_bytes())
+            original.unlink()
+
+        with patch.dict(os.environ, {
+            "APP_DATA_MODE": "csv",
+            "DB_HOST": "postgres.nao-consultar.invalid",
+            "DB_PORT": "5432",
+            "DB_NAME": "nao-consultar",
+            "DB_USER": "nao-consultar",
+            "DB_PASSWORD": "ficticio",
+        }):
+            app = AppTest.from_file(str(self.app_path))
+            with patch("psycopg2.connect") as conectar:
+                app.run()
+            conectar.assert_not_called()
+        self.assertFalse(app.exception)
+        self.assertIn("CSVs Locais", app.sidebar.caption[0].value)
+        self.assertEqual(len(app.metric), 6)
+
+    def test_csv_explicitamente_sem_arquivos_nao_usa_postgres(self):
+        with patch.dict(os.environ, {"APP_DATA_MODE": "csv", "DB_HOST": "host.invalid"}):
+            app = AppTest.from_file(str(self.app_path))
+            with patch("psycopg2.connect") as conectar:
+                app.run()
+            conectar.assert_not_called()
+        self.assertFalse(app.exception)
+        self.assertIn("Nenhuma fonte de dados", app.error[0].value)
 
     def test_publicacao_configuracao_incompleta_nao_tenta_conectar(self):
         self.dados_locais()

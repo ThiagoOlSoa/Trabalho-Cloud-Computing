@@ -41,5 +41,8 @@ data/raw/**
 !data/raw/README.md
 data/processed/**
 !data/processed/README.md
+# Apenas os dois CSVs públicos processados e compactados para o teste online
+!data/processed/censo_2024_area1.csv.gz
+!data/processed/enade_2023_area1.csv.gz
 *.parquet
 *.feather
