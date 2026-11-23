@@ -1,0 +1,866 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_POSTGRESQL",
+      "label": "PostgreSQL do Observatório",
+      "type": "datasource",
+      "pluginId": "grafana-postgresql-datasource",
+      "pluginName": "PostgreSQL"
+    }
+  ],
+  "id": null,
+  "uid": "observatorio-area1",
+  "title": "Observatório de Evasão e Retenção | Área 1",
+  "description": "Censo da Educação Superior 2024 e ENADE 2023 · INEP · ODS 5 e 18",
+  "tags": [
+    "INEP",
+    "ODS 5",
+    "ODS 18"
+  ],
+  "editable": true,
+  "schemaVersion": 41,
+  "version": 1,
+  "timezone": "browser",
+  "timepicker": {
+    "hidden": true
+  },
+  "refresh": "",
+  "templating": {
+    "list": [
+      {
+        "name": "grau",
+        "label": "Grau acadêmico",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "${DS_POSTGRESQL}"
+        },
+        "query": "WITH cursos AS (\n    SELECT v.*,\n           COALESCE(NULLIF(v.no_cine_rotulo, ''), 'Não informado') AS area_cine,\n           CASE WHEN v.tp_modalidade_ensino = 2 THEN 'EaD · UF não atribuída'\n                WHEN v.tp_modalidade_ensino = 1 AND v.co_modalidade IS DISTINCT FROM 0\n                THEN COALESCE(NULLIF(v.sg_uf, ''), 'UF indisponível')\n                ELSE 'UF indisponível' END AS uf_oferta,\n           v.qt_mat + v.qt_sit_trancada + v.qt_sit_desvinculado\n               + v.qt_sit_transferido + v.qt_sit_falecido AS total_situacoes,\n           CASE WHEN v.possui_enade_2023 AND v.media_nt_ger BETWEEN 0 AND 100\n                     AND v.qt_notas_validas > 0\n                THEN v.qt_notas_validas ELSE 0 END AS peso_nota\n    FROM public.vw_observatorio_censo_enade AS v\n)\nSELECT DISTINCT grau_academico FROM cursos ORDER BY grau_academico",
+        "definition": "WITH cursos AS (\n    SELECT v.*,\n           COALESCE(NULLIF(v.no_cine_rotulo, ''), 'Não informado') AS area_cine,\n           CASE WHEN v.tp_modalidade_ensino = 2 THEN 'EaD · UF não atribuída'\n                WHEN v.tp_modalidade_ensino = 1 AND v.co_modalidade IS DISTINCT FROM 0\n                THEN COALESCE(NULLIF(v.sg_uf, ''), 'UF indisponível')\n                ELSE 'UF indisponível' END AS uf_oferta,\n           v.qt_mat + v.qt_sit_trancada + v.qt_sit_desvinculado\n               + v.qt_sit_transferido + v.qt_sit_falecido AS total_situacoes,\n           CASE WHEN v.possui_enade_2023 AND v.media_nt_ger BETWEEN 0 AND 100\n                     AND v.qt_notas_validas > 0\n                THEN v.qt_notas_validas ELSE 0 END AS peso_nota\n    FROM public.vw_observatorio_censo_enade AS v\n)\nSELECT DISTINCT grau_academico FROM cursos ORDER BY grau_academico",
+        "refresh": 1,
+        "multi": true,
+        "includeAll": true,
+        "sort": 0,
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "options": [
+          {
+            "text": "All",
+            "value": "$__all"
+          }
+        ]
+      },
+      {
+        "name": "modalidade",
+        "label": "Modalidade",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "${DS_POSTGRESQL}"
+        },
+        "query": "WITH cursos AS (\n    SELECT v.*,\n           COALESCE(NULLIF(v.no_cine_rotulo, ''), 'Não informado') AS area_cine,\n           CASE WHEN v.tp_modalidade_ensino = 2 THEN 'EaD · UF não atribuída'\n                WHEN v.tp_modalidade_ensino = 1 AND v.co_modalidade IS DISTINCT FROM 0\n                THEN COALESCE(NULLIF(v.sg_uf, ''), 'UF indisponível')\n                ELSE 'UF indisponível' END AS uf_oferta,\n           v.qt_mat + v.qt_sit_trancada + v.qt_sit_desvinculado\n               + v.qt_sit_transferido + v.qt_sit_falecido AS total_situacoes,\n           CASE WHEN v.possui_enade_2023 AND v.media_nt_ger BETWEEN 0 AND 100\n                     AND v.qt_notas_validas > 0\n                THEN v.qt_notas_validas ELSE 0 END AS peso_nota\n    FROM public.vw_observatorio_censo_enade AS v\n)\nSELECT DISTINCT modalidade_ensino FROM cursos ORDER BY modalidade_ensino",
+        "definition": "WITH cursos AS (\n    SELECT v.*,\n           COALESCE(NULLIF(v.no_cine_rotulo, ''), 'Não informado') AS area_cine,\n           CASE WHEN v.tp_modalidade_ensino = 2 THEN 'EaD · UF não atribuída'\n                WHEN v.tp_modalidade_ensino = 1 AND v.co_modalidade IS DISTINCT FROM 0\n                THEN COALESCE(NULLIF(v.sg_uf, ''), 'UF indisponível')\n                ELSE 'UF indisponível' END AS uf_oferta,\n           v.qt_mat + v.qt_sit_trancada + v.qt_sit_desvinculado\n               + v.qt_sit_transferido + v.qt_sit_falecido AS total_situacoes,\n           CASE WHEN v.possui_enade_2023 AND v.media_nt_ger BETWEEN 0 AND 100\n                     AND v.qt_notas_validas > 0\n                THEN v.qt_notas_validas ELSE 0 END AS peso_nota\n    FROM public.vw_observatorio_censo_enade AS v\n)\nSELECT DISTINCT modalidade_ensino FROM cursos ORDER BY modalidade_ensino",
+        "refresh": 1,
+        "multi": true,
+        "includeAll": true,
+        "sort": 0,
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "options": [
+          {
+            "text": "All",
+            "value": "$__all"
+          }
+        ]
+      },
+      {
+        "name": "rede",
+        "label": "Rede de ensino",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "${DS_POSTGRESQL}"
+        },
+        "query": "WITH cursos AS (\n    SELECT v.*,\n           COALESCE(NULLIF(v.no_cine_rotulo, ''), 'Não informado') AS area_cine,\n           CASE WHEN v.tp_modalidade_ensino = 2 THEN 'EaD · UF não atribuída'\n                WHEN v.tp_modalidade_ensino = 1 AND v.co_modalidade IS DISTINCT FROM 0\n                THEN COALESCE(NULLIF(v.sg_uf, ''), 'UF indisponível')\n                ELSE 'UF indisponível' END AS uf_oferta,\n           v.qt_mat + v.qt_sit_trancada + v.qt_sit_desvinculado\n               + v.qt_sit_transferido + v.qt_sit_falecido AS total_situacoes,\n           CASE WHEN v.possui_enade_2023 AND v.media_nt_ger BETWEEN 0 AND 100\n                     AND v.qt_notas_validas > 0\n                THEN v.qt_notas_validas ELSE 0 END AS peso_nota\n    FROM public.vw_observatorio_censo_enade AS v\n)\nSELECT DISTINCT rede_ensino FROM cursos ORDER BY rede_ensino",
+        "definition": "WITH cursos AS (\n    SELECT v.*,\n           COALESCE(NULLIF(v.no_cine_rotulo, ''), 'Não informado') AS area_cine,\n           CASE WHEN v.tp_modalidade_ensino = 2 THEN 'EaD · UF não atribuída'\n                WHEN v.tp_modalidade_ensino = 1 AND v.co_modalidade IS DISTINCT FROM 0\n                THEN COALESCE(NULLIF(v.sg_uf, ''), 'UF indisponível')\n                ELSE 'UF indisponível' END AS uf_oferta,\n           v.qt_mat + v.qt_sit_trancada + v.qt_sit_desvinculado\n               + v.qt_sit_transferido + v.qt_sit_falecido AS total_situacoes,\n           CASE WHEN v.possui_enade_2023 AND v.media_nt_ger BETWEEN 0 AND 100\n                     AND v.qt_notas_validas > 0\n                THEN v.qt_notas_validas ELSE 0 END AS peso_nota\n    FROM public.vw_observatorio_censo_enade AS v\n)\nSELECT DISTINCT rede_ensino FROM cursos ORDER BY rede_ensino",
+        "refresh": 1,
+        "multi": true,
+        "includeAll": true,
+        "sort": 0,
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "options": [
+          {
+            "text": "All",
+            "value": "$__all"
+          }
+        ]
+      },
+      {
+        "name": "uf",
+        "label": "UF de oferta presencial",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "${DS_POSTGRESQL}"
+        },
+        "query": "WITH cursos AS (\n    SELECT v.*,\n           COALESCE(NULLIF(v.no_cine_rotulo, ''), 'Não informado') AS area_cine,\n           CASE WHEN v.tp_modalidade_ensino = 2 THEN 'EaD · UF não atribuída'\n                WHEN v.tp_modalidade_ensino = 1 AND v.co_modalidade IS DISTINCT FROM 0\n                THEN COALESCE(NULLIF(v.sg_uf, ''), 'UF indisponível')\n                ELSE 'UF indisponível' END AS uf_oferta,\n           v.qt_mat + v.qt_sit_trancada + v.qt_sit_desvinculado\n               + v.qt_sit_transferido + v.qt_sit_falecido AS total_situacoes,\n           CASE WHEN v.possui_enade_2023 AND v.media_nt_ger BETWEEN 0 AND 100\n                     AND v.qt_notas_validas > 0\n                THEN v.qt_notas_validas ELSE 0 END AS peso_nota\n    FROM public.vw_observatorio_censo_enade AS v\n)\nSELECT DISTINCT uf_oferta FROM cursos ORDER BY uf_oferta",
+        "definition": "WITH cursos AS (\n    SELECT v.*,\n           COALESCE(NULLIF(v.no_cine_rotulo, ''), 'Não informado') AS area_cine,\n           CASE WHEN v.tp_modalidade_ensino = 2 THEN 'EaD · UF não atribuída'\n                WHEN v.tp_modalidade_ensino = 1 AND v.co_modalidade IS DISTINCT FROM 0\n                THEN COALESCE(NULLIF(v.sg_uf, ''), 'UF indisponível')\n                ELSE 'UF indisponível' END AS uf_oferta,\n           v.qt_mat + v.qt_sit_trancada + v.qt_sit_desvinculado\n               + v.qt_sit_transferido + v.qt_sit_falecido AS total_situacoes,\n           CASE WHEN v.possui_enade_2023 AND v.media_nt_ger BETWEEN 0 AND 100\n                     AND v.qt_notas_validas > 0\n                THEN v.qt_notas_validas ELSE 0 END AS peso_nota\n    FROM public.vw_observatorio_censo_enade AS v\n)\nSELECT DISTINCT uf_oferta FROM cursos ORDER BY uf_oferta",
+        "refresh": 1,
+        "multi": true,
+        "includeAll": true,
+        "sort": 0,
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "options": [
+          {
+            "text": "All",
+            "value": "$__all"
+          }
+        ]
+      },
+      {
+        "name": "cine",
+        "label": "Área Cine",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "${DS_POSTGRESQL}"
+        },
+        "query": "WITH cursos AS (\n    SELECT v.*,\n           COALESCE(NULLIF(v.no_cine_rotulo, ''), 'Não informado') AS area_cine,\n           CASE WHEN v.tp_modalidade_ensino = 2 THEN 'EaD · UF não atribuída'\n                WHEN v.tp_modalidade_ensino = 1 AND v.co_modalidade IS DISTINCT FROM 0\n                THEN COALESCE(NULLIF(v.sg_uf, ''), 'UF indisponível')\n                ELSE 'UF indisponível' END AS uf_oferta,\n           v.qt_mat + v.qt_sit_trancada + v.qt_sit_desvinculado\n               + v.qt_sit_transferido + v.qt_sit_falecido AS total_situacoes,\n           CASE WHEN v.possui_enade_2023 AND v.media_nt_ger BETWEEN 0 AND 100\n                     AND v.qt_notas_validas > 0\n                THEN v.qt_notas_validas ELSE 0 END AS peso_nota\n    FROM public.vw_observatorio_censo_enade AS v\n)\nSELECT DISTINCT area_cine FROM cursos ORDER BY area_cine",
+        "definition": "WITH cursos AS (\n    SELECT v.*,\n           COALESCE(NULLIF(v.no_cine_rotulo, ''), 'Não informado') AS area_cine,\n           CASE WHEN v.tp_modalidade_ensino = 2 THEN 'EaD · UF não atribuída'\n                WHEN v.tp_modalidade_ensino = 1 AND v.co_modalidade IS DISTINCT FROM 0\n                THEN COALESCE(NULLIF(v.sg_uf, ''), 'UF indisponível')\n                ELSE 'UF indisponível' END AS uf_oferta,\n           v.qt_mat + v.qt_sit_trancada + v.qt_sit_desvinculado\n               + v.qt_sit_transferido + v.qt_sit_falecido AS total_situacoes,\n           CASE WHEN v.possui_enade_2023 AND v.media_nt_ger BETWEEN 0 AND 100\n                     AND v.qt_notas_validas > 0\n                THEN v.qt_notas_validas ELSE 0 END AS peso_nota\n    FROM public.vw_observatorio_censo_enade AS v\n)\nSELECT DISTINCT area_cine FROM cursos ORDER BY area_cine",
+        "refresh": 1,
+        "multi": true,
+        "includeAll": true,
+        "sort": 0,
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "options": [
+          {
+            "text": "All",
+            "value": "$__all"
+          }
+        ]
+      },
+      {
+        "name": "enade",
+        "label": "ENADE 2023",
+        "type": "custom",
+        "query": "Todos,Apenas com registro : Com registro",
+        "includeAll": false,
+        "multi": false,
+        "current": {
+          "text": "Todos",
+          "value": "Todos"
+        },
+        "options": [
+          {
+            "text": "Todos",
+            "value": "Todos",
+            "selected": true
+          },
+          {
+            "text": "Apenas com registro",
+            "value": "Com registro",
+            "selected": false
+          }
+        ]
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "",
+      "description": "",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 4
+      },
+      "transparent": true,
+      "options": {
+        "mode": "markdown",
+        "content": "# Observatório de Evasão e Retenção\n**Área 1 · Censo 2024 e ENADE 2023 · INEP · ODS 5 e 18**"
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Recorte e participação feminina",
+      "description": "Uma linha por curso do Censo. Participação feminina usa o total de matrículas.",
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 12,
+        "h": 5
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${DS_POSTGRESQL}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${DS_POSTGRESQL}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH cursos AS (\n    SELECT v.*,\n           COALESCE(NULLIF(v.no_cine_rotulo, ''), 'Não informado') AS area_cine,\n           CASE WHEN v.tp_modalidade_ensino = 2 THEN 'EaD · UF não atribuída'\n                WHEN v.tp_modalidade_ensino = 1 AND v.co_modalidade IS DISTINCT FROM 0\n                THEN COALESCE(NULLIF(v.sg_uf, ''), 'UF indisponível')\n                ELSE 'UF indisponível' END AS uf_oferta,\n           v.qt_mat + v.qt_sit_trancada + v.qt_sit_desvinculado\n               + v.qt_sit_transferido + v.qt_sit_falecido AS total_situacoes,\n           CASE WHEN v.possui_enade_2023 AND v.media_nt_ger BETWEEN 0 AND 100\n                     AND v.qt_notas_validas > 0\n                THEN v.qt_notas_validas ELSE 0 END AS peso_nota\n    FROM public.vw_observatorio_censo_enade AS v\n), recorte AS (\n    SELECT *\n    FROM cursos\n    WHERE grau_academico = ANY(ARRAY[${grau:sqlstring}]::text[])\n      AND modalidade_ensino = ANY(ARRAY[${modalidade:sqlstring}]::text[])\n      AND rede_ensino = ANY(ARRAY[${rede:sqlstring}]::text[])\n      AND uf_oferta = ANY(ARRAY[${uf:sqlstring}]::text[])\n      AND area_cine = ANY(ARRAY[${cine:sqlstring}]::text[])\n      AND (${enade:sqlstring} = 'Todos' OR possui_enade_2023)\n),\nmedidas AS (\n-- Uma linha por curso na view. COUNT(campo) invalida somas com lacunas.\nSELECT\n    COUNT(*) AS cursos,\n    CASE WHEN COUNT(qt_mat) = COUNT(*) THEN SUM(qt_mat) END AS matriculas,\n    CASE WHEN COUNT(qt_ing) = COUNT(*) THEN SUM(qt_ing) END AS ingressantes,\n    CASE WHEN COUNT(qt_conc) = COUNT(*) THEN SUM(qt_conc) END AS concluintes,\n    COUNT(*) FILTER (WHERE possui_enade_2023) AS cursos_enade,\n    ROUND(100.0 * COUNT(*) FILTER (WHERE possui_enade_2023) /\n          NULLIF(COUNT(*), 0), 1) AS cobertura,\n    CASE WHEN COUNT(qt_mat_fem_censo) = COUNT(*) AND COUNT(qt_mat) = COUNT(*)\n         THEN ROUND(100.0 * SUM(qt_mat_fem_censo) /\n                    NULLIF(GREATEST(SUM(qt_mat), 0), 0), 1) END AS feminino,\n    CASE WHEN COUNT(qt_mat_preta_censo + qt_mat_parda_censo) = COUNT(*)\n               AND COUNT(qt_mat - qt_mat_cornd_censo) = COUNT(*)\n         THEN ROUND(100.0 * SUM(qt_mat_preta_censo + qt_mat_parda_censo) /\n                    NULLIF(GREATEST(SUM(qt_mat - qt_mat_cornd_censo), 0), 0), 1)\n         END AS preta_parda,\n    CASE WHEN COUNT(total_situacoes) = COUNT(*)\n         THEN ROUND(100.0 * SUM(qt_sit_desvinculado) /\n                    NULLIF(GREATEST(SUM(total_situacoes), 0), 0), 1) END AS desvinculacao,\n    ROUND(SUM(media_nt_ger * peso_nota) FILTER (WHERE peso_nota > 0) /\n          NULLIF(SUM(peso_nota), 0), 1) AS media_enade\nFROM recorte\n)\nSELECT translate(to_char(cursos, 'FM999,999,999,990'), ',', '.') AS \"Cursos\",\n       translate(to_char(matriculas, 'FM999,999,999,990'), ',', '.') AS \"Matrículas\",\n       replace(to_char(feminino, 'FM990.0'), '.', ',') || '%' AS \"Participação feminina\"\nFROM medidas"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "—",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#3596A1"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "orientation": "auto",
+        "justifyMode": "center",
+        "textMode": "value_and_name",
+        "wideLayout": false,
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/.*/"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Raça/cor, vínculos e desempenho",
+      "description": "Preta/parda entre matrículas com raça/cor declarada. Desvinculação entre os vínculos do ano. Média ENADE ponderada por notas válidas.",
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 12,
+        "h": 5
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${DS_POSTGRESQL}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${DS_POSTGRESQL}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH cursos AS (\n    SELECT v.*,\n           COALESCE(NULLIF(v.no_cine_rotulo, ''), 'Não informado') AS area_cine,\n           CASE WHEN v.tp_modalidade_ensino = 2 THEN 'EaD · UF não atribuída'\n                WHEN v.tp_modalidade_ensino = 1 AND v.co_modalidade IS DISTINCT FROM 0\n                THEN COALESCE(NULLIF(v.sg_uf, ''), 'UF indisponível')\n                ELSE 'UF indisponível' END AS uf_oferta,\n           v.qt_mat + v.qt_sit_trancada + v.qt_sit_desvinculado\n               + v.qt_sit_transferido + v.qt_sit_falecido AS total_situacoes,\n           CASE WHEN v.possui_enade_2023 AND v.media_nt_ger BETWEEN 0 AND 100\n                     AND v.qt_notas_validas > 0\n                THEN v.qt_notas_validas ELSE 0 END AS peso_nota\n    FROM public.vw_observatorio_censo_enade AS v\n), recorte AS (\n    SELECT *\n    FROM cursos\n    WHERE grau_academico = ANY(ARRAY[${grau:sqlstring}]::text[])\n      AND modalidade_ensino = ANY(ARRAY[${modalidade:sqlstring}]::text[])\n      AND rede_ensino = ANY(ARRAY[${rede:sqlstring}]::text[])\n      AND uf_oferta = ANY(ARRAY[${uf:sqlstring}]::text[])\n      AND area_cine = ANY(ARRAY[${cine:sqlstring}]::text[])\n      AND (${enade:sqlstring} = 'Todos' OR possui_enade_2023)\n),\nmedidas AS (\n-- Uma linha por curso na view. COUNT(campo) invalida somas com lacunas.\nSELECT\n    COUNT(*) AS cursos,\n    CASE WHEN COUNT(qt_mat) = COUNT(*) THEN SUM(qt_mat) END AS matriculas,\n    CASE WHEN COUNT(qt_ing) = COUNT(*) THEN SUM(qt_ing) END AS ingressantes,\n    CASE WHEN COUNT(qt_conc) = COUNT(*) THEN SUM(qt_conc) END AS concluintes,\n    COUNT(*) FILTER (WHERE possui_enade_2023) AS cursos_enade,\n    ROUND(100.0 * COUNT(*) FILTER (WHERE possui_enade_2023) /\n          NULLIF(COUNT(*), 0), 1) AS cobertura,\n    CASE WHEN COUNT(qt_mat_fem_censo) = COUNT(*) AND COUNT(qt_mat) = COUNT(*)\n         THEN ROUND(100.0 * SUM(qt_mat_fem_censo) /\n                    NULLIF(GREATEST(SUM(qt_mat), 0), 0), 1) END AS feminino,\n    CASE WHEN COUNT(qt_mat_preta_censo + qt_mat_parda_censo) = COUNT(*)\n               AND COUNT(qt_mat - qt_mat_cornd_censo) = COUNT(*)\n         THEN ROUND(100.0 * SUM(qt_mat_preta_censo + qt_mat_parda_censo) /\n                    NULLIF(GREATEST(SUM(qt_mat - qt_mat_cornd_censo), 0), 0), 1)\n         END AS preta_parda,\n    CASE WHEN COUNT(total_situacoes) = COUNT(*)\n         THEN ROUND(100.0 * SUM(qt_sit_desvinculado) /\n                    NULLIF(GREATEST(SUM(total_situacoes), 0), 0), 1) END AS desvinculacao,\n    ROUND(SUM(media_nt_ger * peso_nota) FILTER (WHERE peso_nota > 0) /\n          NULLIF(SUM(peso_nota), 0), 1) AS media_enade\nFROM recorte\n)\nSELECT replace(to_char(preta_parda, 'FM990.0'), '.', ',') || '%' AS \"Preta/parda · declaradas\",\n       replace(to_char(desvinculacao, 'FM990.0'), '.', ',') || '%' AS \"Desvinculação anual\",\n       replace(to_char(media_enade, 'FM990.0'), '.', ',') AS \"Média geral ENADE\"\nFROM medidas"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "—",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#3596A1"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "orientation": "auto",
+        "justifyMode": "center",
+        "textMode": "value_and_name",
+        "wideLayout": false,
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/.*/"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Ingressantes e concluintes",
+      "description": "São populações observadas em 2024, com totais próprios.",
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 12,
+        "h": 5
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${DS_POSTGRESQL}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${DS_POSTGRESQL}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH cursos AS (\n    SELECT v.*,\n           COALESCE(NULLIF(v.no_cine_rotulo, ''), 'Não informado') AS area_cine,\n           CASE WHEN v.tp_modalidade_ensino = 2 THEN 'EaD · UF não atribuída'\n                WHEN v.tp_modalidade_ensino = 1 AND v.co_modalidade IS DISTINCT FROM 0\n                THEN COALESCE(NULLIF(v.sg_uf, ''), 'UF indisponível')\n                ELSE 'UF indisponível' END AS uf_oferta,\n           v.qt_mat + v.qt_sit_trancada + v.qt_sit_desvinculado\n               + v.qt_sit_transferido + v.qt_sit_falecido AS total_situacoes,\n           CASE WHEN v.possui_enade_2023 AND v.media_nt_ger BETWEEN 0 AND 100\n                     AND v.qt_notas_validas > 0\n                THEN v.qt_notas_validas ELSE 0 END AS peso_nota\n    FROM public.vw_observatorio_censo_enade AS v\n), recorte AS (\n    SELECT *\n    FROM cursos\n    WHERE grau_academico = ANY(ARRAY[${grau:sqlstring}]::text[])\n      AND modalidade_ensino = ANY(ARRAY[${modalidade:sqlstring}]::text[])\n      AND rede_ensino = ANY(ARRAY[${rede:sqlstring}]::text[])\n      AND uf_oferta = ANY(ARRAY[${uf:sqlstring}]::text[])\n      AND area_cine = ANY(ARRAY[${cine:sqlstring}]::text[])\n      AND (${enade:sqlstring} = 'Todos' OR possui_enade_2023)\n),\nmedidas AS (\n-- Uma linha por curso na view. COUNT(campo) invalida somas com lacunas.\nSELECT\n    COUNT(*) AS cursos,\n    CASE WHEN COUNT(qt_mat) = COUNT(*) THEN SUM(qt_mat) END AS matriculas,\n    CASE WHEN COUNT(qt_ing) = COUNT(*) THEN SUM(qt_ing) END AS ingressantes,\n    CASE WHEN COUNT(qt_conc) = COUNT(*) THEN SUM(qt_conc) END AS concluintes,\n    COUNT(*) FILTER (WHERE possui_enade_2023) AS cursos_enade,\n    ROUND(100.0 * COUNT(*) FILTER (WHERE possui_enade_2023) /\n          NULLIF(COUNT(*), 0), 1) AS cobertura,\n    CASE WHEN COUNT(qt_mat_fem_censo) = COUNT(*) AND COUNT(qt_mat) = COUNT(*)\n         THEN ROUND(100.0 * SUM(qt_mat_fem_censo) /\n                    NULLIF(GREATEST(SUM(qt_mat), 0), 0), 1) END AS feminino,\n    CASE WHEN COUNT(qt_mat_preta_censo + qt_mat_parda_censo) = COUNT(*)\n               AND COUNT(qt_mat - qt_mat_cornd_censo) = COUNT(*)\n         THEN ROUND(100.0 * SUM(qt_mat_preta_censo + qt_mat_parda_censo) /\n                    NULLIF(GREATEST(SUM(qt_mat - qt_mat_cornd_censo), 0), 0), 1)\n         END AS preta_parda,\n    CASE WHEN COUNT(total_situacoes) = COUNT(*)\n         THEN ROUND(100.0 * SUM(qt_sit_desvinculado) /\n                    NULLIF(GREATEST(SUM(total_situacoes), 0), 0), 1) END AS desvinculacao,\n    ROUND(SUM(media_nt_ger * peso_nota) FILTER (WHERE peso_nota > 0) /\n          NULLIF(SUM(peso_nota), 0), 1) AS media_enade\nFROM recorte\n)\nSELECT translate(to_char(ingressantes, 'FM999,999,999,990'), ',', '.') AS \"Ingressantes\",\n       translate(to_char(concluintes, 'FM999,999,999,990'), ',', '.') AS \"Concluintes\"\nFROM medidas"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "—",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#3596A1"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "orientation": "auto",
+        "justifyMode": "center",
+        "textMode": "value_and_name",
+        "wideLayout": false,
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/.*/"
+        },
+        "text": {
+          "titleSize": 13,
+          "valueSize": 27
+        }
+      }
+    },
+    {
+      "id": 11,
+      "type": "stat",
+      "title": "Cobertura do ENADE 2023",
+      "description": "A cobertura é a proporção de cursos selecionados com registro ENADE 2023, inclusive quando o curso não tem notas válidas.",
+      "gridPos": {
+        "x": 12,
+        "y": 9,
+        "w": 12,
+        "h": 5
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${DS_POSTGRESQL}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${DS_POSTGRESQL}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH cursos AS (\n    SELECT v.*,\n           COALESCE(NULLIF(v.no_cine_rotulo, ''), 'Não informado') AS area_cine,\n           CASE WHEN v.tp_modalidade_ensino = 2 THEN 'EaD · UF não atribuída'\n                WHEN v.tp_modalidade_ensino = 1 AND v.co_modalidade IS DISTINCT FROM 0\n                THEN COALESCE(NULLIF(v.sg_uf, ''), 'UF indisponível')\n                ELSE 'UF indisponível' END AS uf_oferta,\n           v.qt_mat + v.qt_sit_trancada + v.qt_sit_desvinculado\n               + v.qt_sit_transferido + v.qt_sit_falecido AS total_situacoes,\n           CASE WHEN v.possui_enade_2023 AND v.media_nt_ger BETWEEN 0 AND 100\n                     AND v.qt_notas_validas > 0\n                THEN v.qt_notas_validas ELSE 0 END AS peso_nota\n    FROM public.vw_observatorio_censo_enade AS v\n), recorte AS (\n    SELECT *\n    FROM cursos\n    WHERE grau_academico = ANY(ARRAY[${grau:sqlstring}]::text[])\n      AND modalidade_ensino = ANY(ARRAY[${modalidade:sqlstring}]::text[])\n      AND rede_ensino = ANY(ARRAY[${rede:sqlstring}]::text[])\n      AND uf_oferta = ANY(ARRAY[${uf:sqlstring}]::text[])\n      AND area_cine = ANY(ARRAY[${cine:sqlstring}]::text[])\n      AND (${enade:sqlstring} = 'Todos' OR possui_enade_2023)\n),\nmedidas AS (\n-- Uma linha por curso na view. COUNT(campo) invalida somas com lacunas.\nSELECT\n    COUNT(*) AS cursos,\n    CASE WHEN COUNT(qt_mat) = COUNT(*) THEN SUM(qt_mat) END AS matriculas,\n    CASE WHEN COUNT(qt_ing) = COUNT(*) THEN SUM(qt_ing) END AS ingressantes,\n    CASE WHEN COUNT(qt_conc) = COUNT(*) THEN SUM(qt_conc) END AS concluintes,\n    COUNT(*) FILTER (WHERE possui_enade_2023) AS cursos_enade,\n    ROUND(100.0 * COUNT(*) FILTER (WHERE possui_enade_2023) /\n          NULLIF(COUNT(*), 0), 1) AS cobertura,\n    CASE WHEN COUNT(qt_mat_fem_censo) = COUNT(*) AND COUNT(qt_mat) = COUNT(*)\n         THEN ROUND(100.0 * SUM(qt_mat_fem_censo) /\n                    NULLIF(GREATEST(SUM(qt_mat), 0), 0), 1) END AS feminino,\n    CASE WHEN COUNT(qt_mat_preta_censo + qt_mat_parda_censo) = COUNT(*)\n               AND COUNT(qt_mat - qt_mat_cornd_censo) = COUNT(*)\n         THEN ROUND(100.0 * SUM(qt_mat_preta_censo + qt_mat_parda_censo) /\n                    NULLIF(GREATEST(SUM(qt_mat - qt_mat_cornd_censo), 0), 0), 1)\n         END AS preta_parda,\n    CASE WHEN COUNT(total_situacoes) = COUNT(*)\n         THEN ROUND(100.0 * SUM(qt_sit_desvinculado) /\n                    NULLIF(GREATEST(SUM(total_situacoes), 0), 0), 1) END AS desvinculacao,\n    ROUND(SUM(media_nt_ger * peso_nota) FILTER (WHERE peso_nota > 0) /\n          NULLIF(SUM(peso_nota), 0), 1) AS media_enade\nFROM recorte\n)\nSELECT translate(to_char(cursos_enade, 'FM999,999,999,990'), ',', '.') AS \"Cursos com ENADE\",\n       replace(to_char(cobertura, 'FM990.0'), '.', ',') || '%' AS \"Cobertura ENADE\"\nFROM medidas"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "—",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#3596A1"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "orientation": "auto",
+        "justifyMode": "center",
+        "textMode": "value_and_name",
+        "wideLayout": false,
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/.*/"
+        },
+        "text": {
+          "titleSize": 13,
+          "valueSize": 27
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "barchart",
+      "title": "Participação por grau acadêmico",
+      "description": "Participação feminina no total de matrículas e participação preta/parda entre matrículas com raça/cor declarada.",
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 12,
+        "h": 10
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${DS_POSTGRESQL}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${DS_POSTGRESQL}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH cursos AS (\n    SELECT v.*,\n           COALESCE(NULLIF(v.no_cine_rotulo, ''), 'Não informado') AS area_cine,\n           CASE WHEN v.tp_modalidade_ensino = 2 THEN 'EaD · UF não atribuída'\n                WHEN v.tp_modalidade_ensino = 1 AND v.co_modalidade IS DISTINCT FROM 0\n                THEN COALESCE(NULLIF(v.sg_uf, ''), 'UF indisponível')\n                ELSE 'UF indisponível' END AS uf_oferta,\n           v.qt_mat + v.qt_sit_trancada + v.qt_sit_desvinculado\n               + v.qt_sit_transferido + v.qt_sit_falecido AS total_situacoes,\n           CASE WHEN v.possui_enade_2023 AND v.media_nt_ger BETWEEN 0 AND 100\n                     AND v.qt_notas_validas > 0\n                THEN v.qt_notas_validas ELSE 0 END AS peso_nota\n    FROM public.vw_observatorio_censo_enade AS v\n), recorte AS (\n    SELECT *\n    FROM cursos\n    WHERE grau_academico = ANY(ARRAY[${grau:sqlstring}]::text[])\n      AND modalidade_ensino = ANY(ARRAY[${modalidade:sqlstring}]::text[])\n      AND rede_ensino = ANY(ARRAY[${rede:sqlstring}]::text[])\n      AND uf_oferta = ANY(ARRAY[${uf:sqlstring}]::text[])\n      AND area_cine = ANY(ARRAY[${cine:sqlstring}]::text[])\n      AND (${enade:sqlstring} = 'Todos' OR possui_enade_2023)\n)\nSELECT categoria AS \"Categoria\",\n    CASE WHEN COUNT(qt_mat_fem_censo) = COUNT(*) AND COUNT(qt_mat) = COUNT(*)\n         THEN ROUND(100.0 * SUM(qt_mat_fem_censo) /\n                    NULLIF(GREATEST(SUM(qt_mat), 0), 0), 1) END AS \"Feminina (%)\",\n    CASE WHEN COUNT(qt_mat_preta_censo + qt_mat_parda_censo) = COUNT(*)\n               AND COUNT(qt_mat - qt_mat_cornd_censo) = COUNT(*)\n         THEN ROUND(100.0 * SUM(qt_mat_preta_censo + qt_mat_parda_censo) /\n                    NULLIF(GREATEST(SUM(qt_mat - qt_mat_cornd_censo), 0), 0), 1)\n         END AS \"Preta/parda (%)\"\nFROM recorte\nCROSS JOIN LATERAL (VALUES (grau_academico)) AS rotulo(categoria)\nGROUP BY categoria\nORDER BY categoria"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "—",
+          "unit": "locale",
+          "decimals": 1,
+          "min": 0,
+          "max": 100,
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Feminina (%)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#167D8D"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Preta/parda (%)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#A26D17"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "xField": "Categoria",
+        "orientation": "horizontal",
+        "stacking": "none",
+        "groupWidth": 0.72,
+        "barWidth": 0.82,
+        "fillOpacity": 87,
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        },
+        "showValue": "never"
+      }
+    },
+    {
+      "id": 6,
+      "type": "barchart",
+      "title": "Participação por modalidade",
+      "description": "Participação feminina no total de matrículas e participação preta/parda entre matrículas com raça/cor declarada.",
+      "gridPos": {
+        "x": 12,
+        "y": 14,
+        "w": 12,
+        "h": 10
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${DS_POSTGRESQL}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${DS_POSTGRESQL}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH cursos AS (\n    SELECT v.*,\n           COALESCE(NULLIF(v.no_cine_rotulo, ''), 'Não informado') AS area_cine,\n           CASE WHEN v.tp_modalidade_ensino = 2 THEN 'EaD · UF não atribuída'\n                WHEN v.tp_modalidade_ensino = 1 AND v.co_modalidade IS DISTINCT FROM 0\n                THEN COALESCE(NULLIF(v.sg_uf, ''), 'UF indisponível')\n                ELSE 'UF indisponível' END AS uf_oferta,\n           v.qt_mat + v.qt_sit_trancada + v.qt_sit_desvinculado\n               + v.qt_sit_transferido + v.qt_sit_falecido AS total_situacoes,\n           CASE WHEN v.possui_enade_2023 AND v.media_nt_ger BETWEEN 0 AND 100\n                     AND v.qt_notas_validas > 0\n                THEN v.qt_notas_validas ELSE 0 END AS peso_nota\n    FROM public.vw_observatorio_censo_enade AS v\n), recorte AS (\n    SELECT *\n    FROM cursos\n    WHERE grau_academico = ANY(ARRAY[${grau:sqlstring}]::text[])\n      AND modalidade_ensino = ANY(ARRAY[${modalidade:sqlstring}]::text[])\n      AND rede_ensino = ANY(ARRAY[${rede:sqlstring}]::text[])\n      AND uf_oferta = ANY(ARRAY[${uf:sqlstring}]::text[])\n      AND area_cine = ANY(ARRAY[${cine:sqlstring}]::text[])\n      AND (${enade:sqlstring} = 'Todos' OR possui_enade_2023)\n)\nSELECT categoria AS \"Categoria\",\n    CASE WHEN COUNT(qt_mat_fem_censo) = COUNT(*) AND COUNT(qt_mat) = COUNT(*)\n         THEN ROUND(100.0 * SUM(qt_mat_fem_censo) /\n                    NULLIF(GREATEST(SUM(qt_mat), 0), 0), 1) END AS \"Feminina (%)\",\n    CASE WHEN COUNT(qt_mat_preta_censo + qt_mat_parda_censo) = COUNT(*)\n               AND COUNT(qt_mat - qt_mat_cornd_censo) = COUNT(*)\n         THEN ROUND(100.0 * SUM(qt_mat_preta_censo + qt_mat_parda_censo) /\n                    NULLIF(GREATEST(SUM(qt_mat - qt_mat_cornd_censo), 0), 0), 1)\n         END AS \"Preta/parda (%)\"\nFROM recorte\nCROSS JOIN LATERAL (VALUES (modalidade_ensino)) AS rotulo(categoria)\nGROUP BY categoria\nORDER BY categoria"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "—",
+          "unit": "locale",
+          "decimals": 1,
+          "min": 0,
+          "max": 100,
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Feminina (%)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#167D8D"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Preta/parda (%)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#A26D17"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "xField": "Categoria",
+        "orientation": "horizontal",
+        "stacking": "none",
+        "groupWidth": 0.72,
+        "barWidth": 0.82,
+        "fillOpacity": 87,
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        },
+        "showValue": "never"
+      }
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "Composição por população do Censo 2024",
+      "description": "Preta/parda entre quem tem raça/cor declarada. Cada população tem seu próprio denominador.",
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 16,
+        "h": 7
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${DS_POSTGRESQL}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${DS_POSTGRESQL}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH cursos AS (\n    SELECT v.*,\n           COALESCE(NULLIF(v.no_cine_rotulo, ''), 'Não informado') AS area_cine,\n           CASE WHEN v.tp_modalidade_ensino = 2 THEN 'EaD · UF não atribuída'\n                WHEN v.tp_modalidade_ensino = 1 AND v.co_modalidade IS DISTINCT FROM 0\n                THEN COALESCE(NULLIF(v.sg_uf, ''), 'UF indisponível')\n                ELSE 'UF indisponível' END AS uf_oferta,\n           v.qt_mat + v.qt_sit_trancada + v.qt_sit_desvinculado\n               + v.qt_sit_transferido + v.qt_sit_falecido AS total_situacoes,\n           CASE WHEN v.possui_enade_2023 AND v.media_nt_ger BETWEEN 0 AND 100\n                     AND v.qt_notas_validas > 0\n                THEN v.qt_notas_validas ELSE 0 END AS peso_nota\n    FROM public.vw_observatorio_censo_enade AS v\n), recorte AS (\n    SELECT *\n    FROM cursos\n    WHERE grau_academico = ANY(ARRAY[${grau:sqlstring}]::text[])\n      AND modalidade_ensino = ANY(ARRAY[${modalidade:sqlstring}]::text[])\n      AND rede_ensino = ANY(ARRAY[${rede:sqlstring}]::text[])\n      AND uf_oferta = ANY(ARRAY[${uf:sqlstring}]::text[])\n      AND area_cine = ANY(ARRAY[${cine:sqlstring}]::text[])\n      AND (${enade:sqlstring} = 'Todos' OR possui_enade_2023)\n)\nSELECT p.populacao AS \"População\",\n    CASE WHEN COUNT(p.total) = COUNT(*) THEN SUM(p.total) END AS \"Total\",\n    CASE WHEN COUNT(p.fem) = COUNT(*) AND COUNT(p.total) = COUNT(*)\n         THEN ROUND(100.0 * SUM(p.fem) /\n                    NULLIF(GREATEST(SUM(p.total), 0), 0), 1) END AS \"Feminina (%)\",\n    CASE WHEN COUNT(p.preta_parda) = COUNT(*) AND COUNT(p.total - p.cornd) = COUNT(*)\n         THEN ROUND(100.0 * SUM(p.preta_parda) /\n                    NULLIF(GREATEST(SUM(p.total - p.cornd), 0), 0), 1)\n         END AS \"Preta/parda (%)\"\nFROM recorte\nCROSS JOIN LATERAL (VALUES\n    (1, 'Ingressantes', qt_ing, qt_ing_fem_censo,\n        qt_ing_preta_censo + qt_ing_parda_censo, qt_ing_cornd_censo),\n    (2, 'Matriculados', qt_mat, qt_mat_fem_censo,\n        qt_mat_preta_censo + qt_mat_parda_censo, qt_mat_cornd_censo),\n    (3, 'Concluintes', qt_conc, qt_conc_fem_censo,\n        qt_conc_preta_censo + qt_conc_parda_censo, qt_conc_cornd_censo)\n) AS p(ordem, populacao, total, fem, preta_parda, cornd)\nGROUP BY p.ordem, p.populacao\nORDER BY p.ordem"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "—",
+          "custom": {
+            "minWidth": 116
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Feminina (%)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Preta/parda (%)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "md",
+        "footer": {
+          "show": false
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "Raça/cor sem informação",
+      "description": "Censo: não declarada ou indisponível. ENADE: não declarou ou sem resposta. Cada fonte usa seu próprio total.",
+      "gridPos": {
+        "x": 16,
+        "y": 24,
+        "w": 8,
+        "h": 7
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${DS_POSTGRESQL}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${DS_POSTGRESQL}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH cursos AS (\n    SELECT v.*,\n           COALESCE(NULLIF(v.no_cine_rotulo, ''), 'Não informado') AS area_cine,\n           CASE WHEN v.tp_modalidade_ensino = 2 THEN 'EaD · UF não atribuída'\n                WHEN v.tp_modalidade_ensino = 1 AND v.co_modalidade IS DISTINCT FROM 0\n                THEN COALESCE(NULLIF(v.sg_uf, ''), 'UF indisponível')\n                ELSE 'UF indisponível' END AS uf_oferta,\n           v.qt_mat + v.qt_sit_trancada + v.qt_sit_desvinculado\n               + v.qt_sit_transferido + v.qt_sit_falecido AS total_situacoes,\n           CASE WHEN v.possui_enade_2023 AND v.media_nt_ger BETWEEN 0 AND 100\n                     AND v.qt_notas_validas > 0\n                THEN v.qt_notas_validas ELSE 0 END AS peso_nota\n    FROM public.vw_observatorio_censo_enade AS v\n), recorte AS (\n    SELECT *\n    FROM cursos\n    WHERE grau_academico = ANY(ARRAY[${grau:sqlstring}]::text[])\n      AND modalidade_ensino = ANY(ARRAY[${modalidade:sqlstring}]::text[])\n      AND rede_ensino = ANY(ARRAY[${rede:sqlstring}]::text[])\n      AND uf_oferta = ANY(ARRAY[${uf:sqlstring}]::text[])\n      AND area_cine = ANY(ARRAY[${cine:sqlstring}]::text[])\n      AND (${enade:sqlstring} = 'Todos' OR possui_enade_2023)\n),\nmedidas AS (\nSELECT\n    CASE WHEN COUNT(qt_mat_cornd_censo) = COUNT(*) AND COUNT(qt_mat) = COUNT(*)\n         THEN ROUND(100.0 * SUM(qt_mat_cornd_censo) /\n                    NULLIF(GREATEST(SUM(qt_mat), 0), 0), 1) END AS censo,\n    CASE WHEN COUNT(qt_raca_nao_declara + qt_raca_sem_resposta)\n                  FILTER (WHERE possui_enade_2023) = COUNT(*) FILTER (WHERE possui_enade_2023)\n               AND COUNT(qt_participantes) FILTER (WHERE possui_enade_2023)\n                  = COUNT(*) FILTER (WHERE possui_enade_2023)\n         THEN ROUND(100.0 * SUM(qt_raca_nao_declara + qt_raca_sem_resposta)\n                                  FILTER (WHERE possui_enade_2023) /\n                    NULLIF(GREATEST(SUM(qt_participantes)\n                                  FILTER (WHERE possui_enade_2023), 0), 0), 1) END AS enade\nFROM recorte\n)\nSELECT replace(to_char(censo, 'FM990.0'), '.', ',') || '%' AS \"Matrículas Censo\",\n       replace(to_char(enade, 'FM990.0'), '.', ',') || '%' AS \"Participantes ENADE\"\nFROM medidas"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "—",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#3596A1"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "orientation": "auto",
+        "justifyMode": "center",
+        "textMode": "value_and_name",
+        "wideLayout": false,
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/.*/"
+        },
+        "text": {
+          "titleSize": 13,
+          "valueSize": 27
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "table",
+      "title": "Perfis agregados dos cursos",
+      "description": "Cursos com pelo menos 30 matrículas e base para as duas proporções. As faixas descrevem totais marginais por curso.",
+      "gridPos": {
+        "x": 0,
+        "y": 31,
+        "w": 24,
+        "h": 11
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${DS_POSTGRESQL}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${DS_POSTGRESQL}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH cursos AS (\n    SELECT v.*,\n           COALESCE(NULLIF(v.no_cine_rotulo, ''), 'Não informado') AS area_cine,\n           CASE WHEN v.tp_modalidade_ensino = 2 THEN 'EaD · UF não atribuída'\n                WHEN v.tp_modalidade_ensino = 1 AND v.co_modalidade IS DISTINCT FROM 0\n                THEN COALESCE(NULLIF(v.sg_uf, ''), 'UF indisponível')\n                ELSE 'UF indisponível' END AS uf_oferta,\n           v.qt_mat + v.qt_sit_trancada + v.qt_sit_desvinculado\n               + v.qt_sit_transferido + v.qt_sit_falecido AS total_situacoes,\n           CASE WHEN v.possui_enade_2023 AND v.media_nt_ger BETWEEN 0 AND 100\n                     AND v.qt_notas_validas > 0\n                THEN v.qt_notas_validas ELSE 0 END AS peso_nota\n    FROM public.vw_observatorio_censo_enade AS v\n), recorte AS (\n    SELECT *\n    FROM cursos\n    WHERE grau_academico = ANY(ARRAY[${grau:sqlstring}]::text[])\n      AND modalidade_ensino = ANY(ARRAY[${modalidade:sqlstring}]::text[])\n      AND rede_ensino = ANY(ARRAY[${rede:sqlstring}]::text[])\n      AND uf_oferta = ANY(ARRAY[${uf:sqlstring}]::text[])\n      AND area_cine = ANY(ARRAY[${cine:sqlstring}]::text[])\n      AND (${enade:sqlstring} = 'Todos' OR possui_enade_2023)\n)\n, perfil AS (\n    SELECT *,\n        100.0 * qt_mat_fem_censo / NULLIF(qt_mat, 0) AS pct_fem,\n        100.0 * (qt_mat_preta_censo + qt_mat_parda_censo)\n              / NULLIF(GREATEST(qt_mat - qt_mat_cornd_censo, 0), 0) AS pct_preta_parda\n    FROM recorte\n    WHERE qt_mat >= 30\n), faixas AS (\n    SELECT *,\n           CASE WHEN pct_fem < 10 THEN '<10%' WHEN pct_fem <= 20 THEN '10–20%'\n                ELSE '>20%' END AS faixa_fem,\n           CASE WHEN pct_preta_parda < 25 THEN '<25%' WHEN pct_preta_parda <= 50 THEN '25–50%'\n                ELSE '>50%' END AS faixa_preta_parda\n    FROM perfil\n    WHERE pct_fem IS NOT NULL AND pct_preta_parda IS NOT NULL\n)\nSELECT modalidade_ensino AS \"Modalidade\", faixa_fem AS \"Faixa feminina\",\n    faixa_preta_parda AS \"Faixa preta/parda\", COUNT(*) AS \"Cursos\",\n    SUM(qt_mat) AS \"Matrículas\",\n    CASE WHEN COUNT(qt_conc) = COUNT(*) THEN SUM(qt_conc) END AS \"Concluintes\",\n    CASE WHEN COUNT(total_situacoes) = COUNT(*)\n         THEN ROUND(100.0 * SUM(qt_sit_desvinculado) /\n                    NULLIF(GREATEST(SUM(total_situacoes), 0), 0), 1) END AS \"Desvinculação (%)\",\n    ROUND(SUM(media_nt_ger * peso_nota) FILTER (WHERE peso_nota > 0) /\n          NULLIF(SUM(peso_nota), 0), 1) AS \"Média ENADE\"\nFROM faixas\nGROUP BY modalidade_ensino, faixa_fem, faixa_preta_parda\nORDER BY modalidade_ensino,\n         CASE faixa_fem WHEN '<10%' THEN 1 WHEN '10–20%' THEN 2 ELSE 3 END,\n         CASE faixa_preta_parda WHEN '<25%' THEN 1 WHEN '25–50%' THEN 2 ELSE 3 END"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "—",
+          "custom": {
+            "minWidth": 110
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Desvinculação (%)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Média ENADE"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "md",
+        "footer": {
+          "show": false
+        }
+      }
+    },
+    {
+      "id": 10,
+      "type": "text",
+      "title": "Como ler os indicadores",
+      "description": "",
+      "gridPos": {
+        "x": 0,
+        "y": 42,
+        "w": 24,
+        "h": 13
+      },
+      "transparent": true,
+      "options": {
+        "mode": "markdown",
+        "content": "**—** indica medida indisponível.\n\n**ODS 5 e 18.** Os percentuais de participação descrevem matrículas. As faixas dos perfis combinam proporções por curso. Uma estimativa sobre mulheres negras exigiria o cruzamento individual de sexo e raça/cor.\n\n**Vínculos no Censo.** A desvinculação é uma composição anual de situações. Uma taxa longitudinal exigiria acompanhar coortes. Ingressantes, matriculados e concluintes são populações observadas em 2024.\n\n**ENADE 2023.** A cobertura mede correspondência por curso. A média usa apenas notas válidas. Censo e ENADE têm anos e populações distintos.\n\n**UF.** A UF refere-se à oferta presencial do Censo. Os cursos EaD permanecem em **EaD · UF não atribuída**, com seus totais nacionais."
+      }
+    }
+  ]
+}
