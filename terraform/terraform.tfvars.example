@@ -1,0 +1,4 @@
+# Exemplo SEM dados reais: copie para terraform.tfvars apenas em ambiente local.
+# NUNCA colocar tokens Aiven ou senhas PostgreSQL neste arquivo.
+aiven_project         = "SEU_PROJETO_AIVEN"
+postgres_service_name = "SEU_SERVICO_POSTGRESQL"

@@ -1,0 +1,45 @@
+# Configuração e credenciais locais
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+secrets.toml
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.tfplan
+
+# Python e ambientes locais
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+ENV/
+.python-version.local
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+crash.*.log
+
+# Dados INEP locais. Preserve apenas amostras explicitamente incluídas.
+data/raw/**
+!data/raw/README.md
+data/processed/**
+!data/processed/README.md
+*.parquet
+*.feather
