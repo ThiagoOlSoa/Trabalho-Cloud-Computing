@@ -38,3 +38,38 @@ Para os testes SQL em PostgreSQL descartável, siga a [reprodução do legado](.
 - **Link público externo.** A documentação do Grafana informa que o compartilhamento externo não suporta variáveis nem consultas que as utilizam. Os painéis deste dashboard dependem delas, então o link público não serve para a avaliação interativa. O compartilhamento externo dirigido por e-mail está em preview restrito e não é uma alternativa gratuita confirmada. [Limitações do compartilhamento externo](https://grafana.com/docs/grafana/latest/visualizations/dashboards/share-dashboards-panels/shared-dashboards/)
 - **Rede.** A conexão sai do backend Grafana. No Cloud, a fonte precisa de um endpoint PostgreSQL alcançável, DNS, porta e TLS autorizados. Se houver allowlist, confirme as faixas de saída aplicáveis ao stack Grafana antes de autorizar a rede. Se o banco só aceitar rede privada, avalie Private Data Source Connect e a disponibilidade no plano com o responsável. Mantenha a rede atual até essa revisão. [Rede e fontes do Grafana Cloud](https://grafana.com/docs/grafana-cloud/connect-externally-hosted/data-sources/) · [Configuração de Private Data Source Connect](https://grafana.com/docs/grafana-cloud/connect-externally-hosted/private-data-source-connect/configure-pdc/)
 - **Alternativa gratuita para apresentação ao vivo.** Se login ou rede impedirem o acesso do professor, apresente o Grafana OSS local com o PostgreSQL descartável via compartilhamento de tela. Essa opção permite demonstrar os filtros e os dados de referência. O acesso online independente continua dependente de publicação aprovada.
+
+## Preparação do Grafana Cloud Free
+
+Com aprovação da equipe, acesse o Grafana Cloud, escolha **Free**, crie um stack e abra o Grafana da organização. Grafana hospeda a interface e consulta o banco. Aiven hospeda o PostgreSQL em `defaultdb`. Confirme a região e a conectividade a partir do stack pela seção **Rede** acima. A conta e o deploy ficam com o responsável após aprovação. [Grafana Cloud Free](https://grafana.com/products/cloud/free-tier/)
+
+Depois de conectar a fonte, confira os dez valores em **All** e **Todos**. Altere cada filtro isoladamente e restaure antes do seguinte:
+
+| Filtro | Ensaio |
+|---|---|
+| Grau | Selecione Tecnológico e verifique a redução do recorte |
+| Modalidade | Selecione EaD e confira a categoria geográfica de EaD |
+| Rede | Selecione Pública e confira que os totais mudam |
+| UF | Selecione SP e confira apenas oferta presencial nessa UF |
+| Área Cine | Escolha um rótulo retornado pela própria lista e confira a mudança de população |
+| ENADE | Selecione Apenas com registro. A cobertura é 100% em um subconjunto não vazio |
+
+Para recuperar o dashboard, localize o JSON no commit aprovado, importe na pasta da equipe e selecione a fonte PostgreSQL de leitura. Confirme o UID `observatorio-area1` antes de substituir uma cópia existente. Caso queira manter as duas cópias, use outro UID. O arquivo preserva a configuração dos painéis e filtros. A senha, as permissões e os convites permanecem na configuração dos serviços.
+
+| Sintoma | Conferência |
+|---|---|
+| Timeout ou falha de DNS | Verifique hostname, porta e regras de rede a partir do backend Grafana |
+| Erro de certificado | Use hostname coberto pelo certificado e CA compatível com `verify-full` |
+| Usuário ou banco inválido | Revise o papel de leitura, `defaultdb` e as permissões sem copiar credenciais para chamados ou logs |
+| Coluna ausente ou permissão negada | Rode o preflight com o papel Grafana e compare os campos com o contrato local |
+| Fonte saudável com valores divergentes | Confira filtros, execute o verificador abaixo e compare nomes, tipos e chave ENADE normalizada antes de alterar o banco |
+
+### Verificador dos indicadores
+
+A partir da raiz do repositório, defina `PGHOST`, `PGDATABASE`, `PGPORT` e `PGUSER`. Para acesso de rede autorizado, configure `PGSSLMODE=verify-full` e `PGSSLROOTCERT`. Use o mecanismo de segredos aprovado ou um `PGPASSFILE` protegido. Para o teste local, use um diretório de socket Unix em `PGHOST`.
+
+```sh
+python -m scripts.validar_indicadores
+```
+
+O script consulta apenas os agregados sem filtros, usa a mesma CTE e o mesmo SQL de indicadores do Grafana e abre uma transação de leitura. As saídas são **0** para igualdade, **1** para divergência e **2** para erro de configuração, conexão ou consulta. Os erros registram o tipo e o SQLSTATE disponível. [Valores esperados](../docs/dashboard_grafana.md#painéis-e-resultados-de-referência)

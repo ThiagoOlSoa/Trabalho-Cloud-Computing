@@ -180,8 +180,14 @@ class TestParidadePostgres(unittest.TestCase):
                     filtered = app.session_state["indicadores_teste"]
                     runs.append((full, options, filtered))
             csv_result, pg_result = runs
-            self.assertEqual(csv_result[0][0], pg_result[0][0])
-            self.assertEqual(csv_result[1:], pg_result[1:])
+            self.assertEqual(csv_result[1], pg_result[1])
+            for csv_kpis, pg_kpis in ((csv_result[0][0], pg_result[0][0]), (csv_result[2], pg_result[2])):
+                # A soma ponderada em float pode variar com a ordem das linhas.
+                self.assertEqual(
+                    {k: v for k, v in csv_kpis.items() if k != "media_enade"},
+                    {k: v for k, v in pg_kpis.items() if k != "media_enade"},
+                )
+                self.assertAlmostEqual(csv_kpis["media_enade"], pg_kpis["media_enade"], delta=1e-12)
             self.assertEqual(pg_result[0][0]["cursos"], 7078)
             self.assertEqual(pg_result[0][0]["cursos_enade"], 1665)
             for first, second in zip(csv_result[0][1], pg_result[0][1], strict=True):
