@@ -35,15 +35,20 @@ def comparar(resultados):
 
 def main():
     host = os.environ.get("PGHOST")
-    if not host or not os.environ.get("PGDATABASE"):
+    database = os.environ.get("PGDATABASE")
+    if not host or not database:
         print("Defina PGHOST e PGDATABASE de forma explícita.", file=sys.stderr)
         return 2
-    if not host.startswith("/") and os.environ.get("PGSSLMODE") != "verify-full":
+    local_socket = host.startswith("/") and "," not in host and not os.environ.get("PGHOSTADDR")
+    if not local_socket and os.environ.get("PGSSLMODE") != "verify-full":
         print("Para um host de rede, configure PGSSLMODE=verify-full e a CA.", file=sys.stderr)
         return 2
 
     try:
-        connection = psycopg2.connect("", connect_timeout=10, options="-c statement_timeout=15000")
+        connection = psycopg2.connect(
+            host=host, dbname=database, sslmode="disable" if local_socket else "verify-full",
+            connect_timeout=10, options="-c statement_timeout=15000",
+        )
         try:
             connection.set_session(readonly=True)
             with connection.cursor() as cursor:

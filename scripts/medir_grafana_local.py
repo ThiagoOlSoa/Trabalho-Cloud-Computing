@@ -13,10 +13,10 @@ from grafana.gerar_dashboard import VARIABLES, dashboard, options_query
 VARIABLE = re.compile(r"\$\{([a-z]+):sqlstring\}")
 
 
-def medir_visitante(opcoes):
+def medir_visitante(host, opcoes):
     inicio = perf_counter()
     resultados = []
-    with closing(psycopg2.connect("", options="-c statement_timeout=15000")) as connection:
+    with closing(psycopg2.connect(host=host, options="-c statement_timeout=15000")) as connection:
         connection.set_session(readonly=True)
         with connection.cursor() as cur:
             def medir(nome, query):
@@ -39,22 +39,23 @@ def medir_visitante(opcoes):
 
 
 def main():
-    if not os.environ.get("PGHOST", "").startswith("/") or os.environ.get("PGHOSTADDR"):
+    host = os.environ.get("PGHOST", "")
+    if not host.startswith("/") or "," in host or os.environ.get("PGHOSTADDR"):
         raise SystemExit("Use o socket Unix de um PostgreSQL local e descartável.")
     opcoes = {"enade": ["Todos"]}
-    with closing(psycopg2.connect("", options="-c statement_timeout=15000")) as connection:
+    with closing(psycopg2.connect(host=host, options="-c statement_timeout=15000")) as connection:
         connection.set_session(readonly=True)
         with connection.cursor() as cur:
             for chave, _, coluna in VARIABLES:
                 cur.execute(options_query(coluna))
                 opcoes[chave] = [row[0] for row in cur.fetchall()]
-    tempo, medicao = medir_visitante(opcoes)
+    tempo, medicao = medir_visitante(host, opcoes)
     for nome, ms, hits, reads in medicao:
         print(f"{nome} | {ms:.1f} ms | shared hit {hits} | shared read {reads}")
     print(f"Mediana por consulta, um visitante: {median(row[1] for row in medicao):.1f} ms")
     print(f"Sequência local, um visitante: {tempo:.0f} ms")
     with ThreadPoolExecutor(max_workers=3) as pool:
-        simultaneos = list(pool.map(lambda _: medir_visitante(opcoes), range(3)))
+        simultaneos = list(pool.map(lambda _: medir_visitante(host, opcoes), range(3)))
     print("Três visitantes, sequência por visitante: "
           + ", ".join(f"{tempo:.0f} ms" for tempo, _ in simultaneos))
     print(f"Mediana por consulta, três visitantes: "
