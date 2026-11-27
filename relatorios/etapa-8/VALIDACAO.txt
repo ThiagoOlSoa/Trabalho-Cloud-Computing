@@ -1,0 +1,49 @@
+Validação final do Observatório · Streamlit
+
+98dc179 Consolida Streamlit como painel exclusivo da entrega
+5f5f933 Consolida documentação acadêmica e manifesto de integridade
+3112271 Restaura proteções de arquivos e fixa o provedor Aiven
+0590f30 Compartilha consulta legada entre dashboards e corrige telemetria
+04b5261 Fixa explicitamente o destino das verificações PostgreSQL
+d254ab4 Atualiza actions e reaproveita PostgreSQL do runner
+90919b3 Automatiza qualidade e prepara apresentação do Observatório
+57c4002 Consulta tabelas legadas no dashboard Grafana
+e22e57b Adiciona dashboard Grafana do Observatório
+24f23d9 Prepara cargas INEP gzip e validação local para Aiven
+
+Suíte sem PostgreSQL
+----------------------------------------------------------------------
+Ran 39 tests in 9.976s
+
+OK (skipped=12)
+
+Suíte integrada e verificador
+----------------------------------------------------------------------
+Ran 39 tests in 14.434s
+
+OK
+OK | cursos | esperado 7078 | encontrado 7078
+OK | matriculas | esperado 1269093 | encontrado 1269093
+OK | ingressantes | esperado 673375 | encontrado 673375
+OK | concluintes | esperado 153760 | encontrado 153760
+OK | cursos_enade | esperado 1665 | encontrado 1665
+OK | cobertura | esperado 23.5 | encontrado 23.5
+OK | feminino | esperado 20.2 | encontrado 20.2
+OK | preta_parda | esperado 41.2 | encontrado 41.2
+OK | desvinculacao | esperado 21.7 | encontrado 21.7
+OK | media_enade | esperado 41.8 | encontrado 41.8
+10 indicadores conferidos, 0 divergências.
+
+Navegador Chromium local
+1440 px / PostgreSQL local: seis cartões válidos, sem rolagem horizontal da página
+390 px / PostgreSQL local: seis cartões válidos, sem rolagem horizontal da página
+390 px / CSVs Locais: seis cartões válidos, sem rolagem horizontal da página
+Filtro ENADE no desktop local: 1.665 cursos após ativação.
+
+Terraform 1.14.7, provedor Aiven 4.66.0
+fmt -check: passou
+init -backend=false -lockfile=readonly: passou
+validate: passou
+
+CI: actionlint passou; execução hospedada pendente do PR no destino.
+Manifesto SHA-256 verificado: 64 arquivos.
