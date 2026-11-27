@@ -1,6 +1,14 @@
 # Relatórios do Observatório
 
-A entrega vigente da Etapa 8 usa **Streamlit como único dashboard**. O commit consolidado é `98dc179` na branch `etapa-8-consolidacao-final`, incluída no bundle. A base do PR é a `main` de `kananda09/Trabalho-Cloud-Computing`.
+## Etapa 9 · Candidata final
+
+O commit final é `9eb84b0`. Para revisão, comece pelo [resumo executivo](etapa-9/README_FINAL.md) e pelo [registro dos testes](etapa-9/VALIDACAO_FINAL.txt). A publicação no repositório da equipe é manual.
+
+[Pacote único de publicação](etapa-9/Observatorio_Etapa9_Publicacao.zip) · [Aplicar o bundle e abrir o PR](etapa-9/COMO_PUBLICAR.md) · [Checklist manual](etapa-9/CHECKLIST_MANUAL.md)
+
+## Etapa 8 · Registro anterior
+
+A entrega da Etapa 8 usa **Streamlit como único dashboard**. O commit consolidado é `98dc179` na branch `etapa-8-consolidacao-final`, incluída no bundle. A base do PR é a `main` de `kananda09/Trabalho-Cloud-Computing`.
 
 | Material | Arquivo |
 |---|---|

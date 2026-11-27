@@ -1,0 +1,47 @@
+ETAPA 9 — VALIDAÇÃO FINAL
+
+Commit: 9eb84b077772cdbb94e3c0be34d76cb0b33f0ccf
+Assunto: Valida granularidade do legado e contrato de permissões do painel
+Base remota da equipe: a32f4e9. Bundle completo verificado e clonado antes dos testes.
+
+Python 3.12: instalação limpa de requirements.txt e pip check concluídos.
+python scripts/verificar_arquivos_ci.py: 14 arquivos Python, 0 inválidos e 0 caminhos proibidos.
+Busca por padrões de segredo nos arquivos de texto: 0 ocorrências.
+python -m scripts.manifesto_sha256 --check e sha256sum -c: 64 arquivos conferidos.
+actionlint .github/workflows/qualidade.yml: aprovado. CI hospedado desta branch ainda não executado.
+Markdown: caminhos relativos conferidos no clone limpo.
+
+python -m unittest discover -s tests -v
+----------------------------------------------------------------------
+Ran 41 tests in 4.466s
+
+OK (skipped=13)
+Aprovados: 28; ignorados por ausência de banco: 13; falhos: 0.
+
+PG_BIN_DIR=<binários PostgreSQL 16.2> bash scripts/testar_postgres_local.sh
+Ran 41 tests in 10.316s
+OK
+OK | cursos | esperado 7078 | encontrado 7078
+OK | matriculas | esperado 1269093 | encontrado 1269093
+OK | ingressantes | esperado 673375 | encontrado 673375
+OK | concluintes | esperado 153760 | encontrado 153760
+OK | cursos_enade | esperado 1665 | encontrado 1665
+OK | cobertura | esperado 23.5 | encontrado 23.5
+OK | feminino | esperado 20.2 | encontrado 20.2
+OK | preta_parda | esperado 41.2 | encontrado 41.2
+OK | desvinculacao | esperado 21.7 | encontrado 21.7
+OK | media_enade | esperado 41.8 | encontrado 41.8
+10 indicadores conferidos, 0 divergências.
+Aprovados: 41; ignorados: 0; falhos: 0.
+
+Chromium no checkout final. PostgreSQL descartável via endpoint TLS local com certificado de teste.
+1440 px / PostgreSQL local: seis cartões válidos, sem rolagem horizontal da página
+390 px / PostgreSQL local: seis cartões válidos, sem rolagem horizontal da página
+390 px / CSVs Locais: seis cartões válidos, sem rolagem horizontal da página
+verify-full rejeitou hostname incompatível no endpoint TLS local.
+No desktop, o filtro de presença no ENADE reduziu o recorte a 1.665 cursos.
+
+Terraform 1.14.7 e aiven/aiven 4.66.0, validação local sem token.
+terraform -chdir=terraform fmt -check -recursive: passou.
+terraform -chdir=terraform init -backend=false -lockfile=readonly -input=false: passou.
+terraform -chdir=terraform validate: passou.
