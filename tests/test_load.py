@@ -1,5 +1,6 @@
 """Testes de carga com registros sintéticos e PostgreSQL local opcional."""
 
+import gzip
 import os
 import shutil
 import subprocess
@@ -55,6 +56,49 @@ class TestValidacaoCarga(unittest.TestCase):
                 self.rejeita(load_enade.carregar_csv, ENADE_COLUMNS, [enade(**changes)], error)
         self.rejeita(load_enade.carregar_csv, ENADE_COLUMNS, [enade(), enade(CO_CURSO="11")],
                      "Chave duplicada")
+
+
+    def test_gzip_e_csv_retorna_os_mesmos_tipos_e_valores(self):
+        for loader, columns, record, encoding in (
+            (load, CENSO_COLUMNS, censo(), "cp1252"),
+            (load_enade, ENADE_COLUMNS, enade(), "utf-8-sig"),
+        ):
+            with self.subTest(loader=loader.__name__):
+                write_csv(self.csv, columns, [record], encoding=encoding)
+                compressed = self.csv.with_suffix(".csv.gz")
+                compressed.write_bytes(gzip.compress(self.csv.read_bytes(), mtime=0))
+                self.assertEqual(loader.carregar_csv(compressed), loader.carregar_csv(self.csv))
+
+    def test_gzip_com_duplicata_normalizada_falha_antes_da_conexao(self):
+        for loader, columns, records, encoding in (
+            (load, CENSO_COLUMNS, [censo(), censo(CO_CURSO="11")], "cp1252"),
+            (load_enade, ENADE_COLUMNS, [enade(), enade(CO_CURSO="11")], "utf-8"),
+        ):
+            with self.subTest(loader=loader.__name__):
+                write_csv(self.csv, columns, records, encoding=encoding)
+                compressed = self.csv.with_suffix(".csv.gz")
+                compressed.write_bytes(gzip.compress(self.csv.read_bytes(), mtime=0))
+                with patch.object(load, "conectar") as conectar, patch.object(load, "upsert") as upsert:
+                    with self.assertRaisesRegex(SystemExit, "duplicada"):
+                        load.executar_carga("Teste", compressed, loader.carregar_csv, upsert)
+                    conectar.assert_not_called()
+                    upsert.assert_not_called()
+
+    def test_gzip_corrompido_ou_truncado_falha_antes_da_conexao(self):
+        for loader, columns, record, encoding in (
+            (load, CENSO_COLUMNS, censo(), "cp1252"),
+            (load_enade, ENADE_COLUMNS, enade(), "utf-8"),
+        ):
+            write_csv(self.csv, columns, [record], encoding=encoding)
+            valid = gzip.compress(self.csv.read_bytes(), mtime=0)
+            crc_invalid = valid[:-8] + bytes([valid[-8] ^ 0xff]) + valid[-7:]
+            for content in (b"nao-gzip", valid[:-1], crc_invalid):
+                with self.subTest(loader=loader.__name__), patch.object(load, "conectar") as conectar:
+                    compressed = self.csv.with_suffix(".csv.gz")
+                    compressed.write_bytes(content)
+                    with self.assertRaisesRegex(SystemExit, "gzip inválido"):
+                        load.executar_carga("Teste", compressed, loader.carregar_csv, None)
+                    conectar.assert_not_called()
 
 
 SOCKET = os.getenv("ETL_TEST_PG_SOCKET")

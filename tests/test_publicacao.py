@@ -27,6 +27,8 @@ SECRET_TESTE = {
     "DB_NAME": "teste",
     "DB_USER": "leitora",
     "DB_PASSWORD": "valor-ficticio",
+    "DB_SSLMODE": "verify-full",
+    "DB_SSL_CA_PEM": "CA fictícia para o teste",
 }
 
 
@@ -38,6 +40,8 @@ class TestPublicacao(unittest.TestCase):
         (self.root / "app").mkdir()
         self.app_path = self.root / "app/app.py"
         self.app_path.write_bytes(APP.read_bytes())
+        (self.root / "sql").mkdir()
+        (self.root / "sql/cursos.sql").write_bytes((APP.parents[1] / "sql/cursos.sql").read_bytes())
         env = patch.dict(os.environ, {k: v for k, v in os.environ.items() if k not in CONFIG_ENV}, clear=True)
         env.start()
         self.addCleanup(env.stop)
@@ -130,6 +134,34 @@ class TestPublicacao(unittest.TestCase):
                 else:
                     self.assertIn("modo de publicação", app.error[0].value)
                     self.assertFalse(app.metric)
+
+    def test_postgres_rejeita_chave_duplicada_sem_mostrar_indicadores(self):
+        self.dados_locais()
+        app = AppTest.from_file(str(self.app_path))
+        app.secrets["observatorio"] = SECRET_TESTE
+        conn = MagicMock()
+        cursor = conn.cursor.return_value.__enter__.return_value
+        cursor.description = [MagicMock(name="coluna")]
+        cursor.description[0].name = "co_curso"
+        cursor.fetchall.return_value = [(1,), (1,)]
+        with patch("psycopg2.connect", return_value=conn):
+            app.run()
+        cursor.execute.assert_called_once()
+        self.assertFalse(app.exception)
+        self.assertFalse(app.metric)
+        self.assertIn("modo de publicação", app.error[0].value)
+        self.assertNotIn("chave de curso", app.error[0].value)
+
+    def test_postgres_remoto_exige_verify_full(self):
+        self.dados_locais()
+        app = AppTest.from_file(str(self.app_path))
+        app.secrets["observatorio"] = {**SECRET_TESTE, "DB_SSLMODE": "require"}
+        with patch("psycopg2.connect") as connect:
+            app.run()
+        connect.assert_not_called()
+        self.assertFalse(app.exception)
+        self.assertIn("modo de publicação", app.error[0].value)
+        self.assertFalse(app.metric)
 
     def test_ca_pem_temporaria_ssl_e_precedencia_env(self):
         app = AppTest.from_file(str(self.app_path))

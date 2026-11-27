@@ -1,60 +1,52 @@
 # Observatório de Evasão e Retenção
 
-Projeto acadêmico de análise de cursos da Área 1, com foco em Exatas, Engenharia, Tecnologia e Matemática. Usa os microdados oficiais do Censo da Educação Superior 2024 e o agregado do ENADE 2023 pelo código do curso, no contexto dos ODS 5 e 18.
+Projeto acadêmico de Computação em Nuvem sobre os cursos da Área 1, com recorte em Exatas, Engenharia, Tecnologia e Matemática. O painel descreve a participação por gênero e raça/cor, a composição anual dos vínculos e o desempenho de cursos, no contexto dos ODS 5 e 18. As fontes oficiais são o Censo da Educação Superior 2024 e o ENADE 2023, ambos do INEP. [Microdados do Censo](https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior) · [Microdados do ENADE](https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/enade)
 
-## Indicadores conferidos nos CSVs de referência
+## Arquitetura e dados
 
-Reprocessamos os arquivos completos do **Censo da Educação Superior 2024** (110.022 registros, 7.085 cursos em todas as dimensões geográficas) e do **ENADE 2023 agregado** (1.665 cursos). A visão do dashboard utiliza as dimensões 1 e 2 do Censo, abrangendo **7.078 cursos**; sete cursos presentes apenas na dimensão 3 ficam fora da visão, mas permanecem na base original.
+O ETL Python transforma o Censo e valida o agregado ENADE. Os loaders registram cada carga em uma transação, validam os arquivos antes de gravar e permitem reexecução. O PostgreSQL usa dois fatos e dimensões de instituição, curso, Cine e localização. O Streamlit utiliza a consulta SQL por curso, compatível com a chave textual do ENADE legado. O desenho inclui o Aiven PostgreSQL gratuito e Terraform para declaração de infraestrutura. [Diagrama](docs/arquitetura.md) · [Dicionário de variáveis](docs/dicionario_variaveis.md) · [ETL e dados](data/README.md) · [Modelagem e carga](docs/carga_postgresql.md)
 
-| Indicador (recorte do dashboard) | Valor |
-| --- | ---: |
+Os dois **CSV gzip completos** estão versionados em `data/processed/`. São dados públicos processados. As bases brutas ficam fora do Git. O Censo contém 110.022 registros e 7.085 cursos em todas as dimensões. A camada analítica usa as dimensões 1 e 2, com 7.078 cursos, dos quais 1.665 têm correspondência no ENADE e 5.413 permanecem sem ENADE. Sete cursos que aparecem apenas na dimensão 3 permanecem na base. [Arquivos processados](data/processed/README.md)
+
+| Indicador do recorte integral | Referência |
+|---|---:|
 | Cursos | 7.078 |
-| Matrículas (Censo 2024) | 1.269.093 |
-| Ingressantes (Censo 2024) | 673.375 |
-| Concluintes (Censo 2024) | 153.760 |
-| Participação feminina nas matrículas | 20,2% |
+| Matrículas | 1.269.093 |
+| Ingressantes | 673.375 |
+| Concluintes | 153.760 |
+| Participação feminina | 20,2% |
 | Participação preta/parda entre matrículas com raça/cor declarada | 41,2% |
 | Composição anual de desvinculação | 21,7% |
-| Cursos com ENADE 2023 | 1.665 (23,5%) |
-| Média ENADE ponderada pelo número de notas válidas | 41,8 |
+| Cursos com ENADE | 1.665 |
+| Cobertura ENADE | 23,5% |
+| Média geral ENADE ponderada por notas válidas | 41,8 |
 
-A tabela [`data/indicadores_referencia.csv`](data/indicadores_referencia.csv) contém totais verificáveis por modalidade, rede e grau, além do total geral. Esses recortes são alternativas de agrupamento do mesmo universo e não devem ser somados entre si. O ENADE 2023 e o Censo 2024 representam anos/populações distintos; os totais marginais de gênero e raça/cor **não permitem calcular evasão individual de mulheres negras**. A desvinculação mostrada é uma composição anual de vínculos, não uma taxa longitudinal de evasão.
+A matriz compara perfis agregados dos cursos. Os totais marginais não fornecem contagens ou taxas específicas de mulheres negras. Participação, desvinculação anual e cobertura ENADE descrevem medidas diferentes. Uma taxa longitudinal de evasão exige dados de coorte. Censo 2024 e ENADE 2023 descrevem anos e populações distintos. [Fórmulas e limitações](docs/indicadores.md)
 
-**Dados não versionados:** o repositório publica amostras de 120 linhas e um CSV-resumo, mas **não** contém os dois CSVs processados completos: `data/processed/censo_2024_area1.csv` (~41,8 MB) e `data/processed/enade_2023_area1.csv` (~151 KB). Para executar o fallback CSV, os dois arquivos precisam existir localmente nessa pasta, conforme [guia](data/README.md). Para publicar sem esses arquivos, configurar a Aiven e os Secrets do Streamlit com `APP_DATA_MODE=postgres`. A publicação no GitHub não comprova a conexão ao banco remoto.
+## Dashboards e reprodução
 
-## Teste online com CSVs compactados — antes da Aiven
+O **Streamlit Community Cloud** é a plataforma oficial de visualização e apresentação. A configuração de produção usa `APP_DATA_MODE=postgres` e TLS `verify-full`. O painel exibe seis métricas principais, a cobertura ENADE e seis filtros. Os CSVs versionados servem para reprodução e contingência local identificada. A publicação, a conexão a `defaultdb` e o acesso do professor ainda precisam de homologação. [Publicação e Secrets](docs/publicacao.md) · [Roteiro de dez minutos](docs/apresentacao_final.md)
 
-O aplicativo também lê os dois arquivos `.csv.gz` diretamente, sem extraí-los no repositório. Os dados públicos processados não estão todos no GitHub automaticamente: após adicionar os dois arquivos compactados em `data/processed/`, você pode testar a mesma aplicação no Streamlit Community Cloud com `APP_DATA_MODE=csv`, sem credenciais de banco. Esse modo **não consulta a Aiven**, mesmo que existam configurações PostgreSQL.
-
-Veja o [guia de implantação CSV](docs/publicacao_csv.md) e a [pasta de dados compactados](data/processed/README.md) para os nomes exatos, instruções de upload e testes. O modo `auto` e o modo `postgres` continuam disponíveis para o desenvolvimento local e para a integração Aiven futura.
-
-## Próxima etapa: PostgreSQL Aiven
-
-O roteiro [Etapa 6C — Aiven](docs/etapa_6c_aiven.md) prepara a inspeção somente leitura do serviço existente e a validação de dados pela Console/PG Studio, sem provisionar recursos, executar cargas remotas ou depender do Streamlit Cloud. Os scripts de auditoria SQL estão em `sql/aiven_preflight.sql` e `sql/aiven_validacao_dados.sql`.
-
-## Execução local
-
-Use Python 3.12 e execute na raiz do projeto.
+Na raiz, com Python 3.12 e ambiente virtual ativo:
 
 ```sh
-python -m venv .venv
-# Ative o ambiente virtual antes dos comandos abaixo.
 python -m pip install -r requirements.txt
-python -m streamlit run app/app.py
+APP_DATA_MODE=csv python -m streamlit run app/app.py
 ```
 
-Para usar CSVs, coloque os dois arquivos processados esperados em `data/processed/`. Os nomes e os comandos de preparação estão no [Guia de dados](data/README.md). As amostras de inspeção em `data/amostras/` têm cobertura parcial.
+O modo CSV usa os gzip versionados. Para conectar ao PostgreSQL autorizado, configure `APP_DATA_MODE=postgres`, o usuário de leitura, a CA e TLS `verify-full`. A telemetria informa a fonte da sessão que forneceu os dados. O tempo exibido inclui eventual cache. [Configuração de ambiente e TLS](docs/publicacao.md)
 
-O modo local `auto` tenta PostgreSQL quando configurado e permite o fallback CSV. Para publicação e demonstração, `APP_DATA_MODE=postgres` exige a origem PostgreSQL e comunica falhas de forma genérica. A configuração aceita ambiente, `.env` local ou a seção `[observatorio]` dos Secrets do Streamlit. Use o usuário de leitura definido pelo responsável pelo serviço. A configuração e a validação de TLS estão no [Manual de publicação](docs/publicacao.md).
+`sql/schema.sql` e `sql/views.sql` são referências para um banco novo, com chave inteira no ENADE. A view antiga na Aiven é um objeto legado e pode conter somente os cursos com ENADE. O dashboard usa `sql/cursos.sql` e dispensa essa view. Para homologação, prefira o preflight de colunas e o verificador de indicadores em modo de leitura. [Preflight](sql/preflight_painel.sql) · [Validador](scripts/validar_indicadores.py)
 
-## Dados, infraestrutura e validação
+## Terraform, testes e integridade
 
-- O ETL trata o Censo 2024 e valida o ENADE 2023 já agregado. A reconstrução do agregado ENADE depende dos arquivos brutos e do dicionário da edição. [Guia de dados](data/README.md)
-- O PostgreSQL local foi validado com PostgreSQL 16.2, primeira carga, reexecução, rollback e consultas. O esquema novo usa `sql/schema.sql` e `sql/views.sql`. Para bancos existentes, inspecione o esquema e as permissões antes de escolher qualquer migração. [Carga e migrações](docs/carga_postgresql.md)
-- A base local de referência tem 7.085 cursos. A view expõe 7.078 cursos das dimensões 1 e 2, dos quais 1.665 têm registro correspondente no ENADE. Sete cursos exclusivos da dimensão 3 seguem armazenados. Os percentuais descrevem composições agregadas de populações distintas. [Fórmulas e limites](docs/indicadores.md)
-- O Terraform para o PostgreSQL gratuito da Aiven passou em `fmt`, `init -backend=false` e `validate`. A verificação da configuração e dos dados do serviço real depende de acesso autorizado. [Manual Terraform](terraform/README.md)
-- O layout, a leitura em telas estreitas e os estados dos cartões são descritos na [documentação visual](docs/dashboard_visual.md).
+O plano declarado é `free-1-1gb`, com provedor `aiven/aiven` e token em variável de ambiente. A demonstração local usa `terraform fmt -check`, `terraform init -backend=false` e `terraform validate`. Essas verificações atestam a configuração. A situação do serviço existente e sua adoção por Terraform exigem revisão do responsável. [Roteiro Terraform](terraform/README.md)
 
-Execute `python -m unittest discover -s tests -v`. As variáveis opcionais para os testes PostgreSQL descartáveis e a comparação com os CSVs completos estão nos guias de carga e indicadores. O histórico documental em `docs/Arquitetura.docx` descreve fases anteriores. Use a documentação Markdown como referência operacional.
+```sh
+python -m unittest discover -s tests -v
+bash scripts/testar_postgres_local.sh
+python -m scripts.manifesto_sha256 --check
+sha256sum -c MANIFESTO_SHA256.txt
+```
 
-A versão 6A foi preparada para publicação e testada localmente. O ZIP de entrega inclui um manifesto de integridade. O acesso à Aiven e a publicação no GitHub e no Streamlit Community Cloud ainda dependem de aprovação e validação da equipe. [Relatório de prontidão](docs/prontidao_6a.md)
+A suíte integrada requer PostgreSQL 16 com `initdb` e `pg_ctl`. Ela cria um cluster descartável por socket Unix, carrega os CSVs completos e testa os esquemas novo e legado. O GitHub Actions executa as duas suítes e informa os testes ignorados. Após adicionar ou atualizar arquivos versionados, execute `git add`, gere o manifesto com `python -m scripts.manifesto_sha256` e inclua o manifesto atualizado no commit. [Workflow de qualidade](.github/workflows/qualidade.yml) · [Conformidade e pendências](docs/conformidade_final.md)

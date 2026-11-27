@@ -1,5 +1,7 @@
 # Relatório de prontidão para publicação
 
+> Registro histórico da Etapa 6A. Para execução e estado atuais, consulte o [README](../README.md).
+
 **Resultado** · versão consolidada e validada localmente. A publicação e a verificação na conta Aiven permanecem pendentes.
 
 ## Consolidação
@@ -38,7 +40,7 @@ O PostgreSQL entregou somente o agregado necessário ao painel. A leitura CSV pr
 
 ## Pendências Aiven e publicação
 
-Confirmar serviço ativo e plano, hostname e porta, banco, view publicada, permissões do usuário de leitura, CA e conectividade a partir do Community Cloud. O repositório consolidado já está no GitHub, em `ThiagoOlSoa/Trabalho-Cloud-Computing`, branch `main`. A equipe ainda precisa configurar os segredos no Streamlit Community Cloud, validar a conexão real com a Aiven e conferir a fonte ativa após a publicação. Os CSVs processados completos não estão versionados. Nenhuma conta real, credencial real, operação Terraform remota, publicação ou alteração em banco compartilhado foi usada para produzir esta versão. [Manual de publicação](publicacao.md)
+Confirmar serviço ativo e plano, hostname e porta, banco, view publicada, permissões do usuário de leitura, CA e conectividade a partir do Community Cloud. O repositório consolidado já está no GitHub, em `ThiagoOlSoa/Trabalho-Cloud-Computing`, branch `main`. A equipe ainda precisa configurar os segredos no Streamlit Community Cloud, validar a conexão real com a Aiven e conferir a fonte ativa após a publicação. Naquele momento, os CSVs processados completos ainda não estavam versionados. Na entrega consolidada, os dois gzip completos estão em `data/processed/`. Nenhuma conta real, credencial real, operação Terraform remota, publicação ou alteração em banco compartilhado foi usada para produzir esta versão. [Manual de publicação](publicacao.md)
 
 ## Piloto de publicação CSV (Etapa 6B)
 

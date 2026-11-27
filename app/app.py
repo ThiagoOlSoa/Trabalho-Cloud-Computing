@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 from contextlib import ExitStack, closing
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -14,41 +15,84 @@ logger = logging.getLogger(__name__)
 
 st.set_page_config(
     page_title="Observatório de Evasão e Retenção — Área 1",
+    page_icon="📊",
     layout="wide",
+    initial_sidebar_state="expanded",
 )
 
 st.markdown("""
 <style>
+.stApp {
+  background-color: #F4F8FA;
+}
 .observatorio-hero {
-  padding: clamp(1.25rem, 4vw, 2.6rem);
+  padding: clamp(1.35rem, 3.5vw, 2.35rem);
   border-radius: 1rem;
-  background: linear-gradient(115deg, #17324D 0%, #195C72 65%, #176E7A 100%);
+  background: linear-gradient(120deg, #102840 0%, #174B66 55%, #167D8D 100%);
   color: #fff;
+  box-shadow: 0 10px 28px rgba(16, 40, 64, 0.14);
+  margin-bottom: 0.75rem;
+}
+.observatorio-hero-top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
 }
 .observatorio-hero h1 {
   color: inherit;
-  font-size: clamp(1.9rem, 4.4vw, 3.1rem);
-  line-height: 1.07;
-  letter-spacing: -.035em;
+  font-size: clamp(1.85rem, 4vw, 2.85rem);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
   padding: 0;
-  margin: .45rem 0 .65rem;
+  margin: 0.55rem 0 0.45rem;
 }
-.observatorio-hero p { color: #E5F2F4; margin: .45rem 0 0; }
+.observatorio-hero p {
+  color: #E2F1F4;
+  margin: 0.25rem 0 0;
+  font-size: 0.98rem;
+}
 .observatorio-hero .observatorio-contexto {
-  color: #CFEBEF;
-  font-size: .8rem;
+  color: #AEE6EE;
+  font-size: 0.78rem;
   font-weight: 700;
-  letter-spacing: .08em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
+  margin: 0;
+}
+.observatorio-badge-cloud {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #E8FAFC;
+  padding: 0.28rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 600;
 }
 .st-key-cartoes_observatorio :where([class*="st-key-kpi_"]) {
-  background: #fff;
+  background: #FFFFFF;
   color: #17324D;
-  border: 1px solid #D9E5ED;
-  border-radius: .8rem;
-  padding: .85rem 1rem;
-  border-top: .22rem solid #167D8D;
+  border: 1px solid #D8E4EC;
+  border-radius: 0.85rem;
+  padding: 0.9rem 1.05rem;
+  border-top: 0.26rem solid #167D8D;
+  box-shadow: 0 4px 14px rgba(23, 50, 77, 0.05);
   height: 100%;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.st-key-cartoes_observatorio :where([class*="st-key-kpi_"]):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(23, 50, 77, 0.09);
+}
+.st-key-cartoes_observatorio :where([class*="st-key-kpi_valido_feminino"]) {
+  border-top-color: #0D9488;
+}
+.st-key-cartoes_observatorio :where([class*="st-key-kpi_valido_preta_parda"]) {
+  border-top-color: #B45309;
+}
+.st-key-cartoes_observatorio :where([class*="st-key-kpi_valido_desvinculacao"]) {
+  border-top-color: #BE123C;
 }
 .st-key-cartoes_observatorio :where([class*="st-key-kpi_zero_"]) {
   border-top-color: #647C8E;
@@ -56,6 +100,60 @@ st.markdown("""
 .st-key-cartoes_observatorio :where([class*="st-key-kpi_ausente_"]) {
   border-top-color: #C08B28;
   background: #FFFBF3;
+}
+.observatorio-insight {
+  background: #FFFFFF;
+  border: 1px solid #D5E3EC;
+  border-left: 0.32rem solid #167D8D;
+  border-radius: 0.75rem;
+  padding: 0.85rem 1.1rem;
+  margin: 0.65rem 0 0.85rem;
+  color: #17324D;
+  font-size: 0.92rem;
+  line-height: 1.48;
+  box-shadow: 0 2px 10px rgba(23, 50, 77, 0.04);
+}
+.observatorio-insight strong {
+  color: #102840;
+}
+.arquitetura-pipeline {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+  gap: 0.75rem;
+  margin: 0.75rem 0 1.15rem;
+}
+.arquitetura-step {
+  background: #FFFFFF;
+  border: 1px solid #D8E4EC;
+  border-top: 0.24rem solid #167D8D;
+  border-radius: 0.8rem;
+  padding: 0.9rem 1rem;
+  box-shadow: 0 3px 12px rgba(23, 50, 77, 0.04);
+}
+.arquitetura-step-num {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #167D8D;
+  margin-bottom: 0.25rem;
+}
+.arquitetura-step h4 {
+  margin: 0 0 0.3rem;
+  font-size: 0.98rem;
+  color: #102840;
+}
+.arquitetura-step .telemetria-valor {
+  margin: 0.15rem 0 0.1rem;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #102840;
+}
+.arquitetura-step p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #4A6478;
+  line-height: 1.4;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -86,8 +184,6 @@ CAMPOS_POSTGRES = ("DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD")
 
 def ler_configuracao():
     try:
-        # Força a leitura do TOML antes de consultar o ambiente. A seção
-        # [observatorio] permanece no objeto de Secrets do Streamlit.
         segredos = st.secrets.get("observatorio", {})
     except FileNotFoundError:
         segredos = {}
@@ -98,7 +194,7 @@ def carregar_via_aiven(config) -> pd.DataFrame:
     import psycopg2
 
     host = str(config["DB_HOST"]).strip()
-    socket_local = host.startswith("/")
+    socket_local = host.startswith("/") and "," not in host
     local = socket_local or host in ("127.0.0.1", "::1", "localhost")
     faltantes = [
         nome for nome in CAMPOS_POSTGRES if not config[nome]
@@ -113,6 +209,9 @@ def carregar_via_aiven(config) -> pd.DataFrame:
     sslmode = config["DB_SSLMODE"] or "require"
     if sslmode not in ("require", "verify-ca", "verify-full") and not (local and sslmode == "disable"):
         raise ValueError("Modo TLS inválido")
+    modo_configurado = str(config["APP_DATA_MODE"]).strip().lower()
+    if modo_configurado == "postgres" and not local and sslmode != "verify-full":
+        raise ValueError("Conexão remota em produção requer TLS verify-full")
     ca_path, ca_pem = config["DB_SSLROOTCERT"], config["DB_SSL_CA_PEM"]
     if ca_path and ca_pem:
         raise ValueError("Informe uma única origem para a CA")
@@ -136,11 +235,17 @@ def carregar_via_aiven(config) -> pd.DataFrame:
             **ssl_options,
         )))
         with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM public.vw_observatorio_censo_enade;")
-            return pd.DataFrame.from_records(
+            recorte_sql = Path(__file__).resolve().parents[1] / "sql" / "cursos.sql"
+            cursor.execute(recorte_sql.read_text(encoding="utf-8") + "\nSELECT * FROM cursos")
+            dados = pd.DataFrame.from_records(
                 cursor.fetchall(), columns=[column.name.lower() for column in cursor.description],
                 coerce_float=True,
             )
+        if dados["co_curso"].isna().any() or not dados["co_curso"].is_unique:
+            raise ValueError("Recorte PostgreSQL com chave de curso inválida")
+        dados.attrs["postgres_local"] = local
+        dados.attrs["postgres_tls"] = conn.info.ssl_in_use
+        return dados
 
 
 carregar_postgres_cache = st.cache_data(ttl=120, max_entries=2, show_spinner=False)(carregar_via_aiven)
@@ -152,7 +257,6 @@ def carregar_via_csv_local(raiz: Path | None = None) -> pd.DataFrame | None:
     pasta = raiz / "data" / "processed"
 
     def localizar_csv(nome):
-        # Prefere CSV convencional em ambiente local e aceita gzip no deploy.
         caminho = pasta / f"{nome}.csv"
         if caminho.is_file():
             return caminho
@@ -169,7 +273,6 @@ def carregar_via_csv_local(raiz: Path | None = None) -> pd.DataFrame | None:
         censo["CO_CINE_ROTULO"].astype(str).str.strip().str.strip('"')
     )
 
-    # Mesma regra da views.sql: TP_DIMENSAO IN (1, 2) agrupado por CO_CURSO
     censo_f = censo[
         (censo["NU_ANO_CENSO"] == 2024) & (censo["TP_DIMENSAO"].isin([1, 2]))
     ].copy()
@@ -249,7 +352,6 @@ def carregar_via_csv_local(raiz: Path | None = None) -> pd.DataFrame | None:
     })
     enade.columns = [c.lower() for c in enade.columns]
 
-    # LEFT JOIN para preservar todos os cursos Tecnólogos e demais cursos da Área 1
     df = pd.merge(censo_grp, enade, on="co_curso", how="left", validate="one_to_one")
     df["possui_enade_2023"] = df["nu_ano_enade"].notna()
     df["mesma_ies"] = np.where(
@@ -275,7 +377,6 @@ COLUNAS_FILTRO = ("grau_academico", "modalidade_ensino", "rede_ensino", "uf_fina
 
 
 def soma_completa(valores):
-    """Não trata lacunas em medidas obrigatórias como zeros."""
     return valores.sum(skipna=False, min_count=1)
 
 
@@ -300,13 +401,14 @@ def formatar_percentual(valor):
 
 
 def preparar_filtros(df):
+    if "uf_oferta" in df:
+        # O PostgreSQL usa as categorias definidas na consulta por curso.
+        return df.rename(columns={"uf_oferta": "uf_final", "area_cine": "no_cine_rotulo"})
     df = df.copy()
     df["grau_academico"] = df["tp_grau_academico"].map(GRAU_MAP).fillna("Outro / Não definido")
     df["modalidade_ensino"] = df["tp_modalidade_ensino"].map(MODALIDADE_CENSO_MAP).fillna("Não informada")
     df["rede_ensino"] = df["tp_rede"].map(REDE_MAP).fillna("Não informada")
     df["no_cine_rotulo"] = df["no_cine_rotulo"].replace("", np.nan).fillna("Não informado")
-    # A view pode preencher sg_uf com a UF ENADE quando co_modalidade == 0.
-    # Nesse caso a UF de oferta do Censo não está disponível na view.
     presencial = df["modalidade_ensino"].eq("Presencial") & df["co_modalidade"].ne(0)
     df["uf_final"] = df["sg_uf"].astype("string").where(presencial).replace("", np.nan).fillna("UF indisponível")
     df.loc[df["modalidade_ensino"].eq("EaD"), "uf_final"] = "EaD · UF não atribuída"
@@ -365,7 +467,7 @@ def obter_dados(preferir_local: bool, config, exige_postgres: bool):
             with st.spinner("Consultando PostgreSQL..."):
                 carregar = carregar_via_aiven if exige_postgres else carregar_postgres_cache
                 df = carregar(config)
-            return df, "PostgreSQL (vw_observatorio_censo_enade)"
+            return df, "PostgreSQL local" if df.attrs["postgres_local"] else "PostgreSQL remoto"
         except Exception as exc:
             logger.warning(
                 "Consulta PostgreSQL indisponível (tipo=%s, sqlstate=%s)",
@@ -380,15 +482,6 @@ def obter_dados(preferir_local: bool, config, exige_postgres: bool):
     return None, None
 
 
-st.markdown("""
-<header class="observatorio-hero">
-  <p class="observatorio-contexto">Área 1 · ODS 5 e ODS 18</p>
-  <h1>Observatório de Evasão e Retenção</h1>
-  <p>Perfis dos cursos de Exatas, Engenharia e Tecnologia</p>
-  <p>Censo da Educação Superior 2024 · ENADE 2023</p>
-</header>
-""", unsafe_allow_html=True)
-
 st.sidebar.header("Filtros e fonte")
 try:
     config = ler_configuracao()
@@ -402,12 +495,14 @@ except Exception as exc:
 
 exige_postgres = modo == "postgres"
 preferir_local = st.sidebar.checkbox("Forçar leitura dos CSVs locais", value=False) if modo == "auto" else False
+
+t_inicio = time.perf_counter()
 if modo == "csv":
-    # Modo de avaliação: nunca abre conexão remota nem usa fallback PostgreSQL.
     df = carregar_via_csv_local(Path(__file__).resolve().parents[1])
     fonte = "CSVs Locais (data/processed/)" if df is not None else None
 else:
     df, fonte = obter_dados(preferir_local, config, exige_postgres)
+tempo_obtencao_ms = (time.perf_counter() - t_inicio) * 1000.0
 
 if df is None and exige_postgres:
     st.error("PostgreSQL indisponível no modo de publicação. Informe a equipe responsável.")
@@ -420,11 +515,24 @@ if df is None:
     )
     st.stop()
 
+usou_postgres = "postgres_tls" in df.attrs
+badge_cloud = f"● {fonte}" if usou_postgres else "● Modo Local (CSV)"
+
+st.markdown(f"""
+<header class="observatorio-hero">
+  <div class="observatorio-hero-top">
+    <p class="observatorio-contexto">Área 1 (CINE) · ODS 5 (Gênero) &amp; ODS 18 (Igualdade Étnico-Racial)</p>
+    <span class="observatorio-badge-cloud">{badge_cloud}</span>
+  </div>
+  <h1>Observatório de Evasão e Retenção</h1>
+  <p>Diagnóstico interseccional de vínculos, permanência e desempenho em Exatas, Engenharia e Tecnologia · Censo 2024 &amp; ENADE 2023</p>
+</header>
+""", unsafe_allow_html=True)
+
 st.sidebar.caption(f"Origem dos dados: {fonte}")
 
 df = preparar_filtros(df)
 
-# Filtros na barra lateral
 graus = sorted(df["grau_academico"].dropna().unique())
 sel_grau = st.sidebar.multiselect(
     "Grau Acadêmico",
@@ -483,7 +591,6 @@ if df_f.empty:
     st.caption("Amplie as opções na barra lateral para atualizar o recorte.")
     st.stop()
 
-# Os valores e os estados seguem o resultado calculado na Etapa 5A.
 kpis = indicadores_principais(df_f)
 cartoes = [
     ("cursos", "Cursos no recorte", f"{kpis['cursos']:,}".replace(",", "."),
@@ -520,6 +627,17 @@ with st.container(key="cartoes_observatorio"):
             with coluna.container(key=f"kpi_{estado}_{identificador}", gap="xxsmall"):
                 st.metric(label, valor, help=ajuda)
                 st.caption(contexto)
+
+matr_fmt = "—" if pd.isna(kpis["matriculas"]) else f"{int(kpis['matriculas']):,}".replace(",", ".")
+st.markdown(f"""
+<div class="observatorio-insight">
+  <strong>Síntese do recorte atual:</strong> Entre as <strong>{matr_fmt}</strong> matrículas ativas analisadas na Área 1,
+  as mulheres representam <strong>{formatar_percentual(kpis['feminino'])}</strong> (ODS 5) e estudantes pretos ou pardos somam
+  <strong>{formatar_percentual(kpis['preta_parda'])}</strong> entre os declarados (ODS 18).
+  A composição anual de desvinculação é de <strong>{formatar_percentual(kpis['desvinculacao'])}</strong>, enquanto a média ENADE 2023
+  é de <strong>{formatar_decimal(kpis['media_enade'])}</strong> pontos (cobertura em {kpis['cursos_enade']} de {kpis['cursos']} cursos · {formatar_percentual(kpis['cobertura'])}).
+</div>
+""", unsafe_allow_html=True)
 st.caption(
     f"**Cobertura ENADE 2023** · {kpis['cursos_enade']} de {kpis['cursos']} cursos "
     f"({formatar_percentual(kpis['cobertura'])}). Cobertura indica presença no arquivo do exame. "
@@ -544,7 +662,6 @@ tab_panorama, tab_intersec, tab_transparencia = st.tabs([
 ])
 
 with tab_panorama:
-    # 1. Comparativo por Grau Acadêmico (Tecnólogo vs. Bacharelado vs. Licenciatura)
     st.subheader("Panorama por grau acadêmico")
     grau_df = (
         df_f.groupby("grau_academico", as_index=False)
@@ -594,8 +711,7 @@ with tab_panorama:
 
     st.divider()
 
-    # 2. Composição das populações do Censo
-    st.subheader("Composição por população")
+    st.subheader("Composição por população (Ingressantes, Matrículas e Concluintes)")
     st.caption(
         "Compara ingressantes, matrículas e concluintes como três populações de 2024. "
         "As diferenças de composição não medem transições individuais."
@@ -633,19 +749,23 @@ with tab_panorama:
     composicao["Etapa"] = composicao["Etapa"].replace({"Matriculados": "Matrículas"})
     fig_funil = px.bar(
         composicao, x="Etapa", y="Percentual", color="Indicador",
+        text_auto=".1f",
         color_discrete_map={
-            "Feminino": "#167D8D", "Preta/parda · declaradas": "#A26D17",
+            "Feminino": "#0D9488", "Preta/parda · declaradas": "#B45309",
             "Raça/cor não informada": "#51718F",
         },
         barmode="group",
         category_orders={"Etapa": ["Ingressantes", "Matrículas", "Concluintes"]},
     )
-    fig_funil.update_traces(hovertemplate="<b>%{fullData.name}</b><br>%{x}: %{y:.1f}%<extra></extra>")
+    fig_funil.update_traces(
+        textposition="outside",
+        hovertemplate="<b>%{fullData.name}</b><br>%{x}: %{y:.1f}%<extra></extra>",
+    )
     fig_funil.update_layout(
-        template="plotly_white", height=355, separators=",.",
+        template="plotly_white", height=365, separators=",.",
         xaxis_title=None, yaxis_title=None, legend_title_text="",
-        legend=dict(orientation="h", y=-0.2, x=0),
-        margin=dict(l=15, r=14, t=20, b=95),
+        legend=dict(orientation="h", y=1.14, x=0),
+        margin=dict(l=15, r=14, t=35, b=25),
     )
     fig_funil.update_yaxes(range=[0, 100], ticksuffix="%", gridcolor="#E5EDF2", fixedrange=True)
     fig_funil.update_xaxes(tickangle=0, fixedrange=True)
@@ -657,10 +777,48 @@ with tab_panorama:
         )
 
     st.divider()
+    st.subheader("Comparativo visual por grau acadêmico")
+    grau_melt = grau_df.melt(
+        id_vars="grau_academico",
+        value_vars=["% Feminino", "% Preta/parda entre declaradas", "% Desvinculado"],
+        var_name="Indicador",
+        value_name="Percentual",
+    )
+    fig_grau = px.bar(
+        grau_melt,
+        x="grau_academico",
+        y="Percentual",
+        color="Indicador",
+        barmode="group",
+        text_auto=".1f",
+        color_discrete_map={
+            "% Feminino": "#0D9488",
+            "% Preta/parda entre declaradas": "#B45309",
+            "% Desvinculado": "#BE123C",
+        },
+        labels={"grau_academico": "Grau Acadêmico", "Percentual": "Percentual (%)"},
+    )
+    fig_grau.update_traces(
+        textposition="outside",
+        hovertemplate="<b>%{x}</b> · %{fullData.name}: %{y:.1f}%<extra></extra>",
+    )
+    fig_grau.update_layout(
+        template="plotly_white",
+        height=340,
+        separators=",.",
+        xaxis_title=None,
+        yaxis_title=None,
+        legend_title_text="",
+        legend=dict(orientation="h", y=1.14, x=0),
+        margin=dict(l=15, r=15, t=35, b=20),
+    )
+    fig_grau.update_yaxes(range=[0, 100], ticksuffix="%", gridcolor="#E5EDF2", fixedrange=True)
+    fig_grau.update_xaxes(fixedrange=True)
+    st.plotly_chart(fig_grau, width="stretch", theme=None, config={"displayModeBar": False})
+
 
 with tab_intersec:
-    # 3. Matriz de perfis agregados
-    st.subheader("Matriz de perfis dos cursos")
+    st.subheader("Matriz interseccional de perfis dos cursos (ODS 5 × ODS 18)")
     st.caption(
         "Considera cursos com pelo menos 30 matrículas e pelo menos uma matrícula com raça/cor declarada. "
         "Os eixos representam duas proporções separadas por curso. A interseção individual é desconhecida."
@@ -718,37 +876,85 @@ with tab_intersec:
         ]
         ordem_fem = ["1) fem. < 10%", "2) fem. 10-20%", "3) fem. > 20%"]
         ordem_negra = ["1) preta/parda < 25%", "2) preta/parda 25-50%", "3) preta/parda > 50%"]
-        fig_matriz = px.density_heatmap(
-            perfil,
-            x="Faixa Feminino",
-            y="Faixa Preta/Parda",
-            facet_col="modalidade_ensino",
-            facet_col_wrap=1,
-            facet_row_spacing=.17,
-            category_orders={
-                "Faixa Feminino": ordem_fem,
-                "Faixa Preta/Parda": ordem_negra,
-                "modalidade_ensino": ["Presencial", "EaD"],
-            },
-            text_auto=True,
-            color_continuous_scale=["#EAF2F5", "#7BC4C3", "#167D8D", "#17324D"],
-            labels={"count": "Cursos", "Faixa Feminino": "% feminino", "Faixa Preta/Parda": "% preta/parda"},
-        )
-        fig_matriz.update_layout(
-            template="plotly_white",
-            height=530 if perfil["modalidade_ensino"].nunique() > 1 else 300,
-            coloraxis_colorbar=dict(title="Cursos", thickness=10, len=.75),
-            separators=",.",
-            margin=dict(l=12, r=12, t=34, b=35),
-        )
-        fig_matriz.for_each_annotation(lambda annotation: annotation.update(
-            text=annotation.text.split("=", 1)[-1], font=dict(color="#17324D", size=13),
-        ))
-        fig_matriz.update_xaxes(tickvals=ordem_fem, ticktext=["<10%", "10–20%", ">20%"],
-                                tickangle=0, title_text="% feminino", showticklabels=True, fixedrange=True)
-        fig_matriz.update_yaxes(tickvals=ordem_negra, ticktext=["<25%", "25–50%", ">50%"],
-                                title_text="% preta/parda", fixedrange=True)
-        st.plotly_chart(fig_matriz, width="stretch", theme=None, config={"displayModeBar": False})
+
+        col_hm, col_bar = st.columns([1.05, 1.15], gap="medium")
+        with col_hm:
+            st.markdown("**Concentração de cursos por faixa interseccional**")
+            fig_matriz = px.density_heatmap(
+                perfil,
+                x="Faixa Feminino",
+                y="Faixa Preta/Parda",
+                facet_col="modalidade_ensino",
+                facet_col_wrap=1,
+                facet_row_spacing=.17,
+                category_orders={
+                    "Faixa Feminino": ordem_fem,
+                    "Faixa Preta/Parda": ordem_negra,
+                    "modalidade_ensino": ["Presencial", "EaD"],
+                },
+                text_auto=True,
+                color_continuous_scale=["#EAF2F5", "#7BC4C3", "#167D8D", "#17324D"],
+                labels={"count": "Cursos", "Faixa Feminino": "% feminino", "Faixa Preta/Parda": "% preta/parda"},
+            )
+            fig_matriz.update_layout(
+                template="plotly_white",
+                height=510 if perfil["modalidade_ensino"].nunique() > 1 else 310,
+                coloraxis_colorbar=dict(title="Cursos", thickness=10, len=.75),
+                separators=",.",
+                margin=dict(l=12, r=12, t=34, b=35),
+            )
+            fig_matriz.for_each_annotation(lambda annotation: annotation.update(
+                text=annotation.text.split("=", 1)[-1], font=dict(color="#17324D", size=13),
+            ))
+            fig_matriz.update_xaxes(tickvals=ordem_fem, ticktext=["<10%", "10–20%", ">20%"],
+                                    tickangle=0, title_text="% feminino", showticklabels=True, fixedrange=True)
+            fig_matriz.update_yaxes(tickvals=ordem_negra, ticktext=["<25%", "25–50%", ">50%"],
+                                    title_text="% preta/parda", fixedrange=True)
+            st.plotly_chart(fig_matriz, width="stretch", theme=None, config={"displayModeBar": False})
+
+        with col_bar:
+            st.markdown("**Composição anual de desvinculação (%) por perfil**")
+            fig_desv_perfil = px.bar(
+                matriz,
+                x="Faixa Preta/Parda",
+                y="% Desvinculado",
+                color="Faixa Feminino",
+                facet_col="modalidade_ensino",
+                facet_col_wrap=1,
+                barmode="group",
+                text_auto=".1f",
+                category_orders={
+                    "Faixa Feminino": ordem_fem,
+                    "Faixa Preta/Parda": ordem_negra,
+                    "modalidade_ensino": ["Presencial", "EaD"],
+                },
+                color_discrete_map={
+                    "1) fem. < 10%": "#17324D",
+                    "2) fem. 10-20%": "#167D8D",
+                    "3) fem. > 20%": "#0D9488",
+                },
+            )
+            fig_desv_perfil.update_traces(
+                textposition="outside",
+                hovertemplate="<b>%{fullData.name}</b><br>%{x}: %{y:.1f}%<extra></extra>",
+            )
+            fig_desv_perfil.update_layout(
+                template="plotly_white",
+                height=510 if perfil["modalidade_ensino"].nunique() > 1 else 310,
+                separators=",.",
+                yaxis_title=None,
+                legend_title_text="",
+                legend=dict(orientation="h", y=1.12, x=0),
+                margin=dict(l=12, r=12, t=52, b=35),
+            )
+            fig_desv_perfil.for_each_annotation(lambda annotation: annotation.update(
+                text=annotation.text.split("=", 1)[-1], font=dict(color="#17324D", size=13),
+            ))
+            fig_desv_perfil.update_xaxes(tickvals=ordem_negra, ticktext=["<25%", "25–50%", ">50%"],
+                                         title_text="% preta/parda", fixedrange=True)
+            fig_desv_perfil.update_yaxes(ticksuffix="%", gridcolor="#E5EDF2", fixedrange=True)
+            st.plotly_chart(fig_desv_perfil, width="stretch", theme=None, config={"displayModeBar": False})
+
         st.dataframe(
             exibir_matriz.rename(columns={"modalidade_ensino": "Modalidade"}).style.format({
                 "% Desvinculado": formatar_percentual,
@@ -759,11 +965,8 @@ with tab_intersec:
             hide_index=True,
         )
 
-    st.divider()
-
 with tab_transparencia:
-    # 4. Transparência: Raça Declarada vs. Não Declarada
-    st.subheader("Declaração de raça/cor")
+    st.subheader("Declaração de raça/cor (Censo 2024 vs. ENADE 2023)")
     st.caption(
         "Os denominadores são as matrículas do Censo 2024 e os registros do ENADE 2023. "
         "As colunas do ENADE ficam vazias quando o grupo não tem registros para calcular o indicador."
@@ -800,6 +1003,79 @@ with tab_transparencia:
     st.dataframe(
         qualidade.style.format(formatar_percentual, subset=[
             "% Não Informada (Censo)", "% Não Declara / Sem Resp. (ENADE)",
+        ]),
+        width="stretch",
+        hide_index=True,
+    )
+
+st.divider()
+if True:
+    st.subheader("Arquitetura e telemetria do painel")
+    st.caption(
+        "Fluxo de microdados públicos, modelagem dimensional e leitura pelo dashboard. "
+        "A telemetria indica a fonte efetivamente utilizada nesta renderização."
+    )
+
+    st.markdown("""
+    <div class="arquitetura-pipeline">
+      <div class="arquitetura-step">
+        <div class="arquitetura-step-num">Etapa 1 · Origem</div>
+        <h4>INEP Dados Abertos</h4>
+        <p>Microdados oficiais do Censo Superior 2024 e ENADE 2023 filtrados para Área 1 (CINE).</p>
+      </div>
+      <div class="arquitetura-step">
+        <div class="arquitetura-step-num">Etapa 2 · ETL &amp; IaC</div>
+        <h4>Python &amp; Terraform</h4>
+        <p>Padronização, tipagem e testes automatizados. A configuração Terraform declara o PostgreSQL via <code>aiven/aiven</code>.</p>
+      </div>
+      <div class="arquitetura-step">
+        <div class="arquitetura-step-num">Etapa 3 · Banco Cloud</div>
+        <h4>Aiven PostgreSQL</h4>
+        <p>Plano Free Tier (1 GB) com esquema estrela (<code>dim_curso</code>, <code>dim_localizacao</code>, tabelas fato).</p>
+      </div>
+      <div class="arquitetura-step">
+        <div class="arquitetura-step-num">Etapa 4 · Camada Analítica</div>
+        <h4>Streamlit Community Cloud</h4>
+        <p>Consulta de leitura às tabelas PostgreSQL. O Streamlit também pode carregar os CSVs locais.</p>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    registros_fmt = f"{len(df):,}".replace(",", ".")
+    tls_estado = "Não se aplica"
+    if usou_postgres:
+        tls_estado = "Ativo" if df.attrs["postgres_tls"] else "Inativo"
+    st.markdown(f"""
+    <div class="arquitetura-pipeline">
+      <div class="arquitetura-step">
+        <div class="arquitetura-step-num">Fonte em uso</div>
+        <div class="telemetria-valor">{badge_cloud.removeprefix("● ")}</div>
+        <p>Política configurada: {modo.upper()}</p>
+      </div>
+      <div class="arquitetura-step">
+        <div class="arquitetura-step-num">Cursos carregados</div>
+        <div class="telemetria-valor">{registros_fmt}</div>
+        <p>Cursos consolidados Censo × ENADE</p>
+      </div>
+      <div class="arquitetura-step">
+        <div class="arquitetura-step-num">Tempo de obtenção</div>
+        <div class="telemetria-valor">{tempo_obtencao_ms:.0f} ms</div>
+        <p>Tempo nesta renderização, incluindo eventual cache</p>
+      </div>
+      <div class="arquitetura-step">
+        <div class="arquitetura-step-num">Segurança TLS</div>
+        <div class="telemetria-valor">{tls_estado}</div>
+        <p>Estado TLS da sessão que forneceu os dados</p>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.dataframe(
+        pd.DataFrame([
+            {"Camada": "Fonte", "Componente": fonte, "Status / Detalhe": "Dados carregados"},
+            {"Camada": "Recorte analítico", "Componente": "Consulta às tabelas" if usou_postgres else "Agregação dos CSVs", "Status / Detalhe": f"{len(df)} cursos"},
+            {"Camada": "Infraestrutura como código", "Componente": "terraform/main.tf", "Status / Detalhe": "Configuração versionada"},
+            {"Camada": "Sessão PostgreSQL", "Componente": "Somente leitura" if usou_postgres else "Não se aplica", "Status / Detalhe": f"TLS: {tls_estado}"},
         ]),
         width="stretch",
         hide_index=True,
