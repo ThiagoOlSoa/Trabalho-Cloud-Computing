@@ -1,0 +1,51 @@
+name: Importar Etapa 9 para revisao (temporario)
+
+on:
+  push:
+    branches:
+      - chore/importar-etapa9-final
+    paths:
+      - .github/workflows/importar-etapa9-final.yml
+
+permissions:
+  contents: write
+
+jobs:
+  importar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do repositorio pessoal
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Importar bundle, preservar relatorios e preparar codigo
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXPECTED="9eb84b077772cdbb94e3c0be34d76cb0b33f0ccf"
+          BUNDLE="relatorios/etapa-9/observatorio-etapa-9.bundle"
+          test -f "$BUNDLE"
+          git bundle verify "$BUNDLE"
+          git fetch "$BUNDLE" "refs/heads/etapa-9-entrega-final-streamlit:refs/remotes/etapa9/final"
+          test "$(git rev-parse refs/remotes/etapa9/final)" = "$EXPECTED"
+          git worktree add --detach /tmp/observatorio-final-etapa9 refs/remotes/etapa9/final
+          (cd /tmp/observatorio-final-etapa9 && python -m scripts.manifesto_sha256 --check)
+          git worktree remove /tmp/observatorio-final-etapa9
+          # Historico original fica disponivel em branch propria, com autoria intacta.
+          git push origin "refs/remotes/etapa9/final:refs/heads/etapa-9-entrega-final-streamlit"
+          # Sincroniza arquivos do projeto; nao importa, altera ou apaga relatorios/.
+          git restore --source=refs/remotes/etapa9/final --staged --worktree -- . ':(exclude)relatorios'
+          test -f sql/cursos.sql
+          test -f app/app.py
+          test -f relatorios/etapa-9/observatorio-etapa-9.bundle
+          test ! -f grafana/dashboard_observatorio.json
+          if git diff --cached --quiet; then
+            echo "Sem mudancas de codigo na branch."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Sincroniza codigo final Streamlit da Etapa 9; preserva relatorios"
+          git push origin HEAD:refs/heads/chore/importar-etapa9-final
+          echo "Importacao concluida: revisar branch e manter main intacta."
