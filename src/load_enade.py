@@ -79,7 +79,7 @@ def gravar_enade(conn, dados):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--csv", type=Path, default=CSV_PATH)
+    parser.add_argument("--csv", type=Path, default=CSV_PATH, help="Arquivo processado .csv ou .csv.gz.")
     executar_carga("ENADE", parser.parse_args().csv, carregar_csv, gravar_enade)
 
 

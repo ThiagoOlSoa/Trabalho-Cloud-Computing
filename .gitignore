@@ -1,47 +1,60 @@
-# Configuração e credenciais locais
+# Credenciais e segredos (nunca subir no Git)
 .env
 .env.*
 !.env.example
 .streamlit/secrets.toml
-secrets.toml
 *.pem
 *.key
+
+# Ambiente virtual e cache Python
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Terraform (estado e variáveis sensíveis)
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!**/terraform.tfvars.example
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Arquivos temporários, backups e sistema
+*.bak
+*.tmp
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Proteção de arquivos locais e bases brutas
+secrets.toml
 *.p12
 *.pfx
 *.crt
 *.cer
 *.tfplan
-
-# Python e ambientes locais
-__pycache__/
-*.py[cod]
-*$py.class
-.venv/
-venv/
-env/
 ENV/
 .python-version.local
-.pytest_cache/
 .mypy_cache/
 .ruff_cache/
-.coverage
-htmlcov/
-
-# Terraform
-.terraform/
-*.tfstate
-*.tfstate.*
-*.tfvars
-!*.tfvars.example
-crash.log
-crash.*.log
-
-# Dados INEP locais. Preserve apenas amostras explicitamente incluídas.
 data/raw/**
 !data/raw/README.md
+data/validacao/
 data/processed/**
 !data/processed/README.md
-# Apenas os dois CSVs públicos processados e compactados para o teste online
 !data/processed/censo_2024_area1.csv.gz
 !data/processed/enade_2023_area1.csv.gz
 *.parquet

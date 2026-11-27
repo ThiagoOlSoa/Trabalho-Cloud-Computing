@@ -1,5 +1,7 @@
 # Etapa 6B — Teste do dashboard com CSV no Streamlit Community Cloud
 
+> Roteiro histórico do ensaio CSV. Os dois gzip completos já estão versionados. Consulte o [README](../README.md) para o procedimento atual.
+
 Este é um **piloto com dados locais versionados**, anterior à integração Aiven. Não comprova o requisito da conexão Aiven do barema.
 
 ## Dados a colocar no repositório

@@ -108,3 +108,15 @@ Ao encerrar a sessão: `unset AIVEN_TOKEN`. Em outros shells, configure a variá
 - Confirmação de que a senha divulgada anteriormente foi rotacionada, se aplicável (**sem solicitar a senha**).
 
 **Não solicitar por chat:** `AIVEN_TOKEN`, `DB_PASSWORD`, `service_uri` com credenciais, conteúdo de `.env`, arquivos `.tfstate` ou certificados privados.
+
+### Demonstração acadêmica do serviço existente
+
+Na raiz do repositório, use as três verificações abaixo. Elas conferem a configuração local com o lockfile versionado e não precisam de token Aiven.
+
+```sh
+terraform -chdir=terraform fmt -check -recursive
+terraform -chdir=terraform init -backend=false -lockfile=readonly
+terraform -chdir=terraform validate
+```
+
+Na apresentação, mostre separadamente o serviço Free e os dados conferidos no Console ou em evidências coletadas pela equipe. O resultado de `validate` atesta o código. A comprovação de provisionamento via Terraform depende do histórico de execução ou de um estado aprovado e reconciliado. Qualquer operação sobre o serviço existente exige aprovação e revisão do administrador.

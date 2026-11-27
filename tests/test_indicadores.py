@@ -30,6 +30,8 @@ def app_de_teste(root):
     path = root / "app/app.py"
     path.parent.mkdir()
     path.write_text(APP.read_text(encoding="utf-8") + CAPTURE, encoding="utf-8")
+    (root / "sql").mkdir()
+    (root / "sql/cursos.sql").write_bytes((ROOT / "sql/cursos.sql").read_bytes())
     return AppTest.from_file(str(path), default_timeout=45)
 
 
@@ -158,15 +160,23 @@ class TestParidadePostgres(unittest.TestCase):
                             "DB_USER": os.getenv("ETL_TEST_PG_USER", "agent"),
                             "DB_PASSWORD": "", "DB_SSLMODE": "disable"}
             runs = []
-            for host in ("", SOCKET):
+            origens = [{"DB_HOST": ""}, {}]
+            if legado := os.getenv("ETL_TEST_LEGACY_DB_NAME"):
+                origens.append({"DB_NAME": legado, "DB_USER": os.environ["ETL_TEST_LEGACY_USER"]})
+            for origem in origens:
                 st.cache_data.clear()
-                with patch.dict(os.environ, {**postgres_env, "DB_HOST": host}):
+                host = origem.get("DB_HOST", SOCKET)
+                with patch.dict(os.environ, postgres_env | origem):
                     app = app_de_teste(root) if not runs else AppTest.from_file(
                         str(root / "app/app.py"), default_timeout=45
                     )
                     app.run()
                     self.assertFalse(app.exception, app.exception)
-                    self.assertIn("PostgreSQL" if host else "CSVs", app.sidebar.caption[0].value)
+                    self.assertIn("PostgreSQL local" if host else "CSVs", app.sidebar.caption[0].value)
+                    telemetria = next(item.value for item in app.markdown if "Segurança TLS" in item.value)
+                    self.assertIn(">Inativo<" if host else ">Não se aplica<", telemetria)
+                    self.assertNotIn("Registros na View", telemetria)
+                    self.assertNotIn(SOCKET, telemetria)
                     full = tuple(app.session_state[name] for name in (
                         "indicadores_teste", "agrupamentos_teste", "matriz_teste", "dados_teste",
                     ))
@@ -179,22 +189,29 @@ class TestParidadePostgres(unittest.TestCase):
                     self.assertFalse(app.exception, app.exception)
                     filtered = app.session_state["indicadores_teste"]
                     runs.append((full, options, filtered))
-            csv_result, pg_result = runs
-            self.assertEqual(csv_result[0][0], pg_result[0][0])
-            self.assertEqual(csv_result[1:], pg_result[1:])
-            self.assertEqual(pg_result[0][0]["cursos"], 7078)
-            self.assertEqual(pg_result[0][0]["cursos_enade"], 1665)
-            for first, second in zip(csv_result[0][1], pg_result[0][1], strict=True):
-                pd.testing.assert_frame_equal(first, second, check_dtype=False)
-            pd.testing.assert_frame_equal(csv_result[0][2], pg_result[0][2], check_dtype=False)
-            columns = ["co_curso", "grau_academico", "modalidade_ensino", "rede_ensino",
-                       "uf_final", "no_cine_rotulo", "possui_enade_2023"]
-            first, second = csv_result[0][3], pg_result[0][3]
-            pd.testing.assert_frame_equal(
-                first[columns].sort_values("co_curso").reset_index(drop=True),
-                second[columns].sort_values("co_curso").reset_index(drop=True),
-                check_dtype=False,
-            )
+            csv_result = runs[0]
+            for pg_result in runs[1:]:
+                self.assertEqual(csv_result[1], pg_result[1])
+                for csv_kpis, pg_kpis in ((csv_result[0][0], pg_result[0][0]), (csv_result[2], pg_result[2])):
+                    # A soma ponderada em float pode variar com a ordem das linhas.
+                    self.assertEqual(
+                        {k: v for k, v in csv_kpis.items() if k != "media_enade"},
+                        {k: v for k, v in pg_kpis.items() if k != "media_enade"},
+                    )
+                    self.assertAlmostEqual(csv_kpis["media_enade"], pg_kpis["media_enade"], delta=1e-12)
+                self.assertEqual(pg_result[0][0]["cursos"], 7078)
+                self.assertEqual(pg_result[0][0]["cursos_enade"], 1665)
+                for first, second in zip(csv_result[0][1], pg_result[0][1], strict=True):
+                    pd.testing.assert_frame_equal(first, second, check_dtype=False)
+                pd.testing.assert_frame_equal(csv_result[0][2], pg_result[0][2], check_dtype=False)
+                columns = ["co_curso", "grau_academico", "modalidade_ensino", "rede_ensino",
+                           "uf_final", "no_cine_rotulo", "possui_enade_2023"]
+                first, second = csv_result[0][3], pg_result[0][3]
+                pd.testing.assert_frame_equal(
+                    first[columns].sort_values("co_curso").reset_index(drop=True),
+                    second[columns].sort_values("co_curso").reset_index(drop=True),
+                    check_dtype=False,
+                )
             with closing(psycopg2.connect(host=SOCKET, dbname=DB_NAME, user=postgres_env["DB_USER"],
                                           sslmode="disable", password="")) as conn, conn.cursor() as cur:
                 for statement in (ROOT / "sql/interseccionalidade.sql").read_text().split(";"):

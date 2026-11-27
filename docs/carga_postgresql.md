@@ -7,8 +7,8 @@ Em um PostgreSQL descartável, execute `sql/schema.sql` e `sql/views.sql` via `p
 Com as variáveis `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` e `DB_SSLMODE` apontando para o ambiente de teste, use:
 
 ```sh
-python -m src.load --csv caminho/censo_2024_area1.csv
-python -m src.load_enade --csv caminho/enade_2023_area1.csv
+python -m src.load --csv data/processed/censo_2024_area1.csv.gz
+python -m src.load_enade --csv data/processed/enade_2023_area1.csv.gz
 ```
 
 Sem `--csv`, os caminhos padrão são os CSVs em `data/processed/`. Cada comando valida o arquivo inteiro, com tipos e chaves canônicos, e grava em uma única transação. A carga do Censo atualiza dimensões e fatos pelas chaves existentes e rejeita atributos divergentes para uma mesma chave dentro do arquivo. A carga do ENADE confirma que todos os cursos constam em `dim_curso` antes de gravar. Cargas sucessivas atualizam as mesmas chaves e preservam registros ausentes do CSV. Os dois comandos têm transações separadas. Erros do driver são reportados por classe e SQLSTATE. Se a conexão cair durante a confirmação, confira o estado da carga no banco antes de concluir o diagnóstico.

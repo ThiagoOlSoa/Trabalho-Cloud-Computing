@@ -2,7 +2,9 @@
 
 import argparse
 import csv
+import gzip
 import os
+import zlib
 from contextlib import closing
 from pathlib import Path
 
@@ -87,7 +89,11 @@ GRAO_CSV = ["NU_ANO_CENSO", "CO_CURSO", "TP_DIMENSAO", "CO_MUNICIPIO"]
 
 def ler_normalizado(path, encoding, columns, normalize, key):
     seen = set()
-    with path.open(encoding=encoding, newline="") as stream:
+    if path.suffix.lower() == ".gz":
+        entrada = gzip.open(path, mode="rt", encoding=encoding, newline="")
+    else:
+        entrada = path.open(encoding=encoding, newline="")
+    with entrada as stream:
         _, records = rows(stream, ";", columns)
         for line, record in records:
             try:
@@ -192,6 +198,8 @@ def executar_carga(label, path, preparar, gravar):
         # A mensagem do driver pode conter dados da conexão. Registre apenas o código.
         raise SystemExit(f"{label}: falha PostgreSQL ({type(error).__name__}, "
                          f"SQLSTATE {error.pgcode or 'indisponível'}). Carga não confirmada.") from None
+    except (gzip.BadGzipFile, EOFError, zlib.error):
+        raise SystemExit(f"{label}: arquivo gzip inválido, corrompido ou truncado.") from None
     except (ValueError, OSError, csv.Error) as error:
         raise SystemExit(f"{label}: {error}") from None
     print(f"{label}: {total} linhas processadas em transação confirmada.")
@@ -199,7 +207,7 @@ def executar_carga(label, path, preparar, gravar):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--csv", type=Path, default=CSV_PATH)
+    parser.add_argument("--csv", type=Path, default=CSV_PATH, help="Arquivo processado .csv ou .csv.gz.")
     executar_carga("Censo", parser.parse_args().csv, carregar_csv, gravar_censo)
 
 

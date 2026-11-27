@@ -1,6 +1,6 @@
 # Indicadores do Observatório
 
-O painel usa uma linha por curso. O Censo da Educação Superior 2024 contribui com as dimensões 1 e 2 e o ENADE 2023 é associado por código de curso. Na referência completa, 7.078 dos 7.085 cursos carregados entram no painel. Os sete restantes têm registros exclusivamente na dimensão 3. A barra lateral indica se a leitura veio dos CSVs ou do PostgreSQL.
+Os painéis compartilham a consulta de leitura `sql/cursos.sql` no PostgreSQL e usam uma linha por curso. O Censo da Educação Superior 2024 contribui com as dimensões 1 e 2 e o ENADE 2023 é associado por código de curso. Na referência completa, 7.078 dos 7.085 cursos carregados entram no painel. Os sete restantes têm registros exclusivamente na dimensão 3. A barra lateral indica se a leitura veio dos CSVs ou do PostgreSQL.
 
 ## Fórmulas
 

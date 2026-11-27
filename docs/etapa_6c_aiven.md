@@ -1,5 +1,7 @@
 # Etapa 6C — Integração com Aiven PostgreSQL (sem Streamlit Cloud)
 
+> Roteiro histórico do PG Studio. Para o banco legado, use o [preflight de colunas](../sql/preflight_painel.sql) e a [validação direta](../scripts/validar_indicadores.py). Os dashboards dispensam a view antiga.
+
 **Objetivo:** confirmar o serviço PostgreSQL Free já existente, auditar o banco em modo somente leitura, e preparar uma carga controlada dos CSVs oficiais agregados do INEP. **Não há autorização neste roteiro para criar, importar, apagar, migrar ou carregar dados na instância real.**
 
 ## 1. Diferença entre serviços
@@ -21,16 +23,17 @@ Sem enviar credenciais pelo chat nem salvá-las no GitHub:
 - Administrador responsável, se já existe Terraform gerenciando o serviço e se há backup recuperável.
 - Confirmação de que credenciais antigas compartilhadas foram revogadas/trocadas.
 
-O Free tem **1 GB de armazenamento**, **1 GB RAM**, **1 CPU**, **até 20 conexões** e restrições de serviços por organização. Não ativar plano pago, Aiven Runtime ou Grafana pago para contornar limitações.
+O Free tem **1 GB de armazenamento**, **1 GB RAM**, **1 CPU**, **até 20 conexões** e restrições de serviços por organização. Não ativar plano pago, Aiven Runtime para contornar limitações.
 
-## 3. Diagnóstico inicial, sem gravar
+## 3. Cenário A: serviço existente
 
-1. Responsável abre a [Console Aiven](https://console.aiven.io/) e seleciona o PostgreSQL correto.
-2. Confirma plano gratuito, estado, armazenamento e banco, sem expor a senha nem URL que contenha credenciais.
-3. No **PG Studio → SQL editor**, executa as instruções SELECT de [`sql/aiven_preflight.sql`](../sql/aiven_preflight.sql). Se o editor não aceitar vários comandos, executar cada SELECT isoladamente.
-4. Anota apenas o resultado não sensível: quais tabelas e view existem, tamanho do banco e se já possui dados. Se não existir view, **não execute** o segundo script.
-5. Se a view existir e o administrador autorizar leitura, executar [`sql/aiven_validacao_dados.sql`](../sql/aiven_validacao_dados.sql) e comparar os indicadores com o quadro abaixo.
-6. Se índices, constraints, migrações ou totais divergirem, documentar o estado e **interromper**: não sobrescrever nem repetir carga automaticamente.
+Há registros de uso anterior no projeto. O estado atual do serviço, o esquema e a versão dos dados devem ser confirmados com o responsável. Após autorização para leitura:
+
+1. Selecione o serviço e o banco corretos no Console. Registre estado, plano, uso do armazenamento e existência de backup recuperável.
+2. Com `psql` de um usuário somente leitura, execute `psql -X -v ON_ERROR_STOP=1 -f sql/aiven_preflight.sql` no banco alvo. O script funciona em banco vazio. Mostra tamanho, objetos, permissões efetivas do usuário conectado, índices válidos, constraints e definição da view. As linhas do catálogo são estimativas. Os resultados podem incluir nomes internos.
+3. Confirme a unicidade do município e do grão do Censo, a chave ENADE em `(nu_ano, co_curso)`, a FK para `dim_curso` e a existência da localização “SEM MUNICÍPIO”. Compare as definições com o repositório. Obtenha o histórico das migrações com o responsável. Um índice ou constraint presente não comprova por si só que um script específico foi executado.
+4. Se as tabelas estiverem completas e legíveis, use `sql/auditoria_carga.sql` para investigar duplicatas e colisões. Se a view e as três tabelas necessárias estiverem disponíveis, execute `sql/aiven_validacao_dados.sql`. As contagens das tabelas são integrais. Se o banco guardar outras edições, separe o recorte da comparação antes de interpretar uma diferença.
+5. Se esquema e indicadores estiverem de acordo, preserve o banco e use as consultas da seção de demonstração. Se houver lacunas ou divergências, registre o diagnóstico com o responsável. Compare esquema e conteúdo em uma cópia descartável com backup recuperável. Prepare um ajuste específico para revisão. Um upsert dos loaders pode atualizar chaves existentes e conserva chaves ausentes do CSV.
 
 ## 4. Valores de referência no banco (Censo 2024 + ENADE 2023)
 
@@ -50,37 +53,44 @@ O Free tem **1 GB de armazenamento**, **1 GB RAM**, **1 CPU**, **até 20 conexõ
 
 Os indicadores são compostos a partir de dados agregados. Não representam taxas individuais de evasão de mulheres negras ou retenção longitudinal.
 
-## 5. Preparação de carga — SOMENTE se banco estiver vazio e houver nova autorização
+## 5. Inicialização e carga em banco confirmado vazio
 
-Os CSVs completos estão no repositório em `data/processed/*.csv.gz`. Os loaders existentes em `src/load.py` e `src/load_enade.py` esperam `*.csv` e aceitam `--csv`. Antes de executá-los, o Codex deve **ou** implementar e testar leitura gzip nas cargas **ou** descompactar localmente os arquivos para um diretório ignorado pelo Git sem sobrescrever arquivos existentes.
+Este procedimento reproduz o ensaio local. A execução remota exige aprovação específica e confirmação de que nenhum esquema ou dado do projeto precisa ser preservado. As migrações 001–003 são ajustes para esquemas legados. Um banco novo usa `schema.sql` diretamente.
 
-Os arquivos esperados são:
-- `data/processed/censo_2024_area1.csv` (CP1252);
-- `data/processed/enade_2023_area1.csv` (UTF-8).
+Configure `PGHOST`, `PGPORT`, `PGDATABASE` e `PGUSER` para o `psql` e os campos `DB_HOST`, `DB_PORT`, `DB_NAME` e `DB_USER` para os loaders, apontando para o mesmo banco. Use o mecanismo de segredos aprovado pelo responsável. A carga usa `DB_PASSWORD`, distinto do token da API Aiven. Para conexão remota, use `PGSSLMODE=verify-full`, `DB_SSLMODE=verify-full` e `PGSSLROOTCERT` com a CA do projeto. Verifique o hostname usado pelo certificado. Use uma conta autorizada a escrever para a carga e separe-a da conta de leitura do diagnóstico.
 
-Ordem proposta para um **banco de teste descartável**:
-1. Inspecionar o schema alvo e executar o `sql/schema.sql` conforme necessidade, com transação e sem aplicar migrações cegamente.
-2. Validar localmente os dois CSVs.
-3. Executar `python -m src.load --csv data/processed/censo_2024_area1.csv`.
-4. Executar `python -m src.load_enade --csv data/processed/enade_2023_area1.csv`.
-5. Instalar a view `sql/views.sql` somente após checar dependências e privilégios.
-6. Executar queries de verificação e segunda carga (idempotência) somente em ambiente descartável.
-7. Propor o procedimento adaptado à Aiven real; **aguardar aprovação específica** antes de qualquer escrita.
+```sh
+PGOPTIONS='-c search_path=public' psql -X -v ON_ERROR_STOP=1 -1 -f sql/schema.sql
+python -m src.load --csv data/processed/censo_2024_area1.csv.gz
+python -m src.load_enade --csv data/processed/enade_2023_area1.csv.gz
+psql -X -v ON_ERROR_STOP=1 -1 -f sql/views.sql
+psql -X -v ON_ERROR_STOP=1 -f sql/aiven_validacao_dados.sql
+```
 
-Não imprimir `.env`, `AIVEN_TOKEN`, `DB_PASSWORD`, `service_uri` ou estados do Terraform. A autenticação PostgreSQL para carga é distinta do token da API Aiven. Use TLS, de preferência `verify-full` com CA da Aiven, em contexto local autorizado.
+Os loaders também aceitam os CSVs convencionais. Seus caminhos padrão continuam apontando para `.csv`. Use `--csv` para informar explicitamente o gzip. Cada carga valida o arquivo completo antes de se conectar. O Censo precede o ENADE pela chave estrangeira. Cada loader usa uma transação própria. Se a carga ENADE falhar, a transação do Censo já confirmada permanece no banco. Revise os resultados entre as cargas e após instalar a view.
 
-## 6. Terraform: cuidado com serviço preexistente
+## 6. Cenário B: serviço inexistente ou adoção pelo Terraform
 
-O `terraform/` declara `aiven_pg.observatorio` no plano gratuito e foi validado localmente. Não execute `terraform apply` em estado vazio apontando para um serviço que já existe: isso poderá tentar criar outro serviço. Uma **importação** pode ser apropriada após a equipe confirmar proprietário, estado Terraform existente e backup, mas requer autorização específica. Se `terraform plan` indicar criar, atualizar plano, substituir ou destruir serviço: parar e pedir revisão.
+Se a equipe confirmar que não há serviço a preservar, confirme também que existe um projeto Aiven e que a organização está elegível para criar o PostgreSQL gratuito. O Terraform declara um único `aiven_pg.observatorio` no plano `free-1-1gb`, deixa região e nuvem a cargo da Aiven e usa `prevent_destroy`. O lockfile fixa o provedor 4.66.0, validado anteriormente. O futuro plano deve mostrar só uma criação nesse plano gratuito e nenhuma exclusão ou substituição. O provisionamento depende de aprovação específica. [Plano PostgreSQL gratuito](https://aiven.io/docs/products/postgresql/concepts/pg-free-tier) · [Procedimento Terraform](../terraform/README.md)
 
-## 7. Critérios para considerar a Etapa 6C concluída
+Para um serviço existente que a equipe queira colocar sob gerenciamento do Terraform, confirme titularidade, plano, backup e eventual estado que já gerencie o recurso. Uma futura importação usa o endereço `aiven_pg.observatorio` e o identificador `PROJETO/SERVICO`. Ela associa o serviço ao estado. Depois da importação autorizada, revise o plano antes de considerar qualquer alteração. Se o plano propuser criação, mudanças inesperadas de plano ou região, substituição ou exclusão, interrompa a operação. O estado e `AIVEN_TOKEN` ficam fora do repositório. [Importação de recursos Aiven](https://registry.terraform.io/providers/aiven/aiven/latest/docs/guides/importing-resources)
 
-- Conta, projeto e serviço Aiven identificados; plano Free e disponibilidade comprovados.
-- Auditoria SQL **real** e resultados documentados sem credenciais.
-- Se o banco já estiver carregado, paridade com os valores esperados.
-- Se estiver vazio, plano de carga testado localmente e execução real somente após aprovação.
-- Conexão remota autenticada/TLS demonstrada sem expor segredos.
-- Nenhuma operação paga ou destrutiva executada sem autorização.
-- Status do dashboard online mantido explicitamente **pendente** (não substituído por PG Studio).
+## 7. Roteiro de demonstração no PG Studio
 
-Este roteiro é preparatório: publicar documentos e SQL de leitura não equivale a integrar o banco remoto.
+O PG Studio normalmente usa `avnadmin`, com permissões de escrita. A demonstração deve usar somente os SELECTs previamente revisados. Para auditoria com menor privilégio, prefira `psql` com usuário de leitura. Confirme com o operador autorizado a permissão na Console e o acesso pela rede permitida. [Segurança do PG Studio](https://aiven.io/docs/products/postgresql/howto/pg-studio/security-connections) · [Executar consultas](https://aiven.io/docs/products/postgresql/howto/pg-studio/write-run-queries)
+
+| Tempo | Demonstração |
+| --- | --- |
+| 0–2 min | Mostrar na Console o serviço PostgreSQL, plano gratuito, estado e uso de armazenamento. |
+| 2–4 min | Em **Tables**, abrir o mapa de esquema e mostrar dimensões, fatos e view. Em **SQL editor**, mostrar as consultas de inventário e índices do preflight. |
+| 4–7 min | Executar o SELECT de indicadores de `sql/aiven_validacao_dados.sql` e as contagens. Explicar os sete cursos da dimensão 3 preservados no Censo e fora da view. |
+| 7–9 min | Executar a consulta por grau de `sql/queries.sql` ou a comparação de perfis de `sql/interseccionalidade.sql`. Explicar cobertura do ENADE e a diferença entre composição anual e trajetória longitudinal. |
+| 9–10 min | Mostrar o recurso do Terraform e as proteções e encerrar com as limitações do recorte. |
+
+Selecione cada SELECT por inteiro no editor e execute-o isoladamente se a interface tratar instruções em sessões separadas. O bloco `BEGIN ... COMMIT` é apropriado no `psql`. Compartilhe somente saídas agregadas sem nomes internos ou credenciais. A demonstração cobre infraestrutura e análise SQL. O requisito acadêmico de dashboard online com filtros segue pendente.
+
+## 8. Estado da validação e autorizações
+
+O ensaio com PostgreSQL 16.2 descartável passou com os dois gzip completos de `main`. O preflight funcionou antes da criação das tabelas e após o carregamento. A primeira execução e a reexecução produziram os mesmos resultados da seção 4. A auditoria não retornou grupos duplicados. O banco local ocupava cerca de 67 MiB após duas cargas, incluindo o catálogo. O valor serve de referência; o serviço real pode ter outros dados, retenção de WAL e espaço ocupado diferente.
+
+A suíte teve 31 testes aprovados, incluindo rollback, paridade entre gzip e CSV, duplicatas normalizadas e rejeição de gzip corrompido antes da abertura da conexão. A comparação da média ponderada em ponto flutuante admite uma diferença absoluta de até `1e-12` entre as fontes; a fórmula permaneceu igual. A conexão à conta Aiven, o diagnóstico remoto, a carga, o provisionamento e a adoção pelo Terraform dependem de autorização e do responsável pela conta. O código desta etapa não modifica a interface Streamlit.
